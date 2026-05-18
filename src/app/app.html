@@ -1,0 +1,21 @@
+<div class="main-container">
+  <h1>📊 Live Umfragen</h1>
+
+  <div class="poll-list" *ngIf="polls$ | async as polls">
+    <div class="poll-card" *ngFor="let poll of polls">
+      <h2>{{ poll.question }}</h2>
+
+      <div class="voting-area">
+        <button class="vote-btn" (click)="onVote(poll.id, 'votes_a', poll.votes_a)">
+          <span class="label">{{ poll.option_a }}</span>
+          <span class="count">{{ poll.votes_a }} Stimmen</span>
+        </button>
+
+        <button class="vote-btn" (click)="onVote(poll.id, 'votes_b', poll.votes_b)">
+          <span class="label">{{ poll.option_b }}</span>
+          <span class="count">{{ poll.votes_b }} Stimmen</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
