@@ -1,4 +1,4 @@
-<div class="dashboard-wrapper" *ngIf="!selectedSurvey">
+<div class="dashboard-wrapper" *ngIf="!selectedSurvey && !isCreating">
   <header class="hero-section">
     <div class="logo">
       <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
@@ -10,7 +10,10 @@
           Create and share surveys in minutes – from team events to workplace culture. Collect
           opinions, engage your audience, and turn feedback into action.
         </p>
-        <button class="btn-primary">New survey</button>
+        <button class="btn-primary" (click)="openCreateMode()">
+          New survey
+          <img src="/add_circle.svg" alt="add" />
+        </button>
       </div>
       <div class="hero-illustration">
         <img src="/phone-img.svg" alt="Poll App Overview" class="hero-img" />
@@ -58,12 +61,130 @@
   </main>
 </div>
 
+<div class="create-survey-wrapper" *ngIf="isCreating">
+  <div class="create-survey-card">
+    <div class="card-top-row">
+      <div>
+        <span class="badge-draft">Draft</span>
+        <h2>Create new survey</h2>
+      </div>
+      <button class="btn-cancel" (click)="cancelCreation()">Cancel <span>✕</span></button>
+    </div>
+
+    <div class="form-split-layout">
+      <div class="form-column">
+        <div class="form-group">
+          <label>Survey name</label>
+          <input
+            type="text"
+            [(ngModel)]="newSurvey.title"
+            placeholder="e.g. Let's Plan the Next Team Event Together"
+          />
+          <button class="icon-delete" (click)="newSurvey.title = ''">
+            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+          </button>
+        </div>
+
+        <div class="form-group">
+          <div class="row-inputs">
+            <div class="sub-group">
+              <label>Set end date <span class="optional-text">(optional)</span></label>
+              <input type="text" [(ngModel)]="newSurvey.endDate" placeholder="Ends in 1 Day" />
+            </div>
+            <div class="category-select-wrapper">
+              <button class="category-trigger">Choose category <span>▼</span></button>
+            </div>
+          </div>
+          <button class="icon-delete" (click)="newSurvey.endDate = ''" style="bottom: 14px">
+            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+          </button>
+        </div>
+
+        <div
+          class="question-builder-section"
+          *ngFor="let question of newSurvey.questions; let qIdx = index"
+        >
+          <div class="question-title-row">
+            <h3>{{ qIdx + 1 }}. Question</h3>
+            <button
+              class="icon-delete"
+              *ngIf="newSurvey.questions.length > 1"
+              (click)="removeQuestion(qIdx)"
+            >
+              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+            </button>
+          </div>
+
+          <div class="form-group">
+            <input
+              type="text"
+              [(ngModel)]="question.questionText"
+              placeholder="Which date would work best for you?"
+            />
+          </div>
+
+          <div class="answers-heading-row">
+            <h4>Answers</h4>
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="question.allowMultiple" />
+              Allow multiple answers.
+            </label>
+          </div>
+
+          <div class="answer-input-row" *ngFor="let option of question.options; let oIdx = index">
+            <span class="prefix">{{ getLetterPrefix(oIdx) }}</span>
+            <div class="form-group">
+              <input type="text" [(ngModel)]="option.label" placeholder="Option text..." />
+              <button
+                class="icon-delete"
+                *ngIf="question.options.length > 2"
+                (click)="removeAnswerOption(qIdx, oIdx)"
+              >
+                <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-text-action" (click)="addAnswerOption(qIdx)">
+            <span>+</span> Add answer
+          </button>
+        </div>
+      </div>
+
+      <div class="form-column">
+        <div class="form-group">
+          <label>Describing text <span class="optional-text">(optional)</span></label>
+          <textarea
+            [(ngModel)]="newSurvey.description"
+            placeholder="Optional descriptions go here..."
+          ></textarea>
+          <button
+            class="icon-delete"
+            (click)="newSurvey.description = ''"
+            style="bottom: auto; top: 45px"
+          >
+            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+          </button>
+        </div>
+
+        <button class="btn-secondary-action" (click)="addNextQuestion()">
+          Add next question <span>+</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-footer-actions">
+      <button class="btn-publish" (click)="publishSurvey()">Publish</button>
+    </div>
+  </div>
+</div>
+
 <div class="single-survey-view" *ngIf="selectedSurvey">
   <div class="top-nav">
     <div class="logo" (click)="goBack()">
       <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" /> Poll App
     </div>
-    <button class="btn-create-nav">Create survey</button>
+    <button class="btn-create-nav" (click)="openCreateMode()">Create survey</button>
   </div>
 
   <div class="split-layout">
@@ -90,9 +211,9 @@
             <label class="checkbox-option" *ngFor="let opt of q.options; let optIdx = index">
               <input type="checkbox" (change)="registerVote(qIdx, optIdx)" />
               <span class="custom-box"></span>
-              <span class="option-text"
-                ><strong>{{ opt.letter }}.</strong> {{ opt.text }}</span
-              >
+              <span class="option-text">
+                <strong>{{ opt.letter }}.</strong> {{ opt.text }}
+              </span>
             </label>
           </div>
         </div>
