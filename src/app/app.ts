@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { SupabaseService } from './services/supabase';
+import { SupabaseService, Poll, PollQuestion } from './services/supabase';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Wichtig für zwei-Wege-Binding im Formular
+import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -13,68 +13,59 @@ import { Observable } from 'rxjs';
   encapsulation: ViewEncapsulation.None,
 })
 export class AppComponent implements OnInit {
-  /** Datenstrom aller verfügbaren Umfragen aus der Datenbank. */
-  surveys$!: Observable<any[]>;
-  /** Die aktuell ausgewählte Umfrage für die Detailansicht. */
-  selectedSurvey: any = null;
-  /** Filter für das Dashboard ('active' or 'past'). */
+  surveys$!: Observable<Poll[]>;
+  selectedSurvey: Poll | null = null;
   currentFilter: 'active' | 'past' = 'active';
+  isCreating = false;
+  showPublishOverlay = false;
+  isPublishing = false;
 
-  /** Steuerungs-Flag für die Erstellungsansicht */
-  isCreating: boolean = false;
-  /** Datenmodell für die neu zu erstellende Umfrage */
-  newSurvey: any = this.initNewSurveyStructure();
+  newSurvey = this.initNewSurveyStructure();
 
-  /**
-   * Injiziert den benötigten SupabaseService.
-   * @param supabaseService - Der Daten-Service für Supabase.
-   */
   constructor(private supabaseService: SupabaseService) {}
 
-  /**
-   * Initialisiert die Komponente, triggert das Laden und bindet den Datenstrom.
-   */
   ngOnInit(): void {
     this.surveys$ = this.supabaseService.surveys$;
-
-    const service = this.supabaseService as any;
-    if (typeof service.loadSurveys === 'function') {
-      service.loadSurveys();
-    } else if (typeof service.fetchSurveys === 'function') {
-      service.fetchSurveys();
-    } else if (typeof service.getSurveys === 'function') {
-      service.getSurveys();
-    }
-
-    this.surveys$.subscribe({
-      next: (data) => console.log('SURVEY DETECTOR: Daten erfolgreich geladen:', data),
-      error: (err) => console.error('SURVEY DETECTOR ERROR:', err),
-    });
   }
 
-  /** Wechselt in den Modus zum Erstellen einer neuen Umfrage */
+  // ─── Navigation ────────────────────────────────────────────────────────────
+
   openCreateMode(): void {
     this.newSurvey = this.initNewSurveyStructure();
     this.isCreating = true;
     this.selectedSurvey = null;
   }
 
-  /** Bricht das Erstellen ab und kehrt zum Dashboard zurück */
   cancelCreation(): void {
     this.isCreating = false;
     this.newSurvey = this.initNewSurveyStructure();
   }
 
-  /** Generiert ein leeres Standard-Template für eine neue Umfrage */
+  selectSurvey(survey: Poll): void {
+    this.isCreating = false;
+    this.selectedSurvey = JSON.parse(JSON.stringify(survey));
+  }
+
+  goBack(): void {
+    this.selectedSurvey = null;
+    this.isCreating = false;
+  }
+
+  setFilter(filter: 'active' | 'past'): void {
+    this.currentFilter = filter;
+  }
+
+  // ─── Formular-Hilfsmethoden ────────────────────────────────────────────────
+
   private initNewSurveyStructure() {
     return {
       title: '',
       description: '',
       endDate: '',
-      category: 'Team activities',
+      category: 'Allgemein',
       questions: [
         {
-          questionText: 'Which date would work best for you?',
+          questionText: '',
           allowMultiple: false,
           options: [
             { label: '', votes: 0 },
@@ -85,22 +76,18 @@ export class AppComponent implements OnInit {
     };
   }
 
-  /** Wandelt einen Index in fortlaufende Alphabet-Präfixe um (0 -> A., 1 -> B., etc.) */
   getLetterPrefix(index: number): string {
     return String.fromCharCode(65 + index) + '.';
   }
 
-  /** Fügt einer bestimmten Frage eine neue Antwortoption hinzu */
-  addAnswerOption(questionIndex: number): void {
-    this.newSurvey.questions[questionIndex].options.push({ label: '', votes: 0 });
+  addAnswerOption(qIdx: number): void {
+    this.newSurvey.questions[qIdx].options.push({ label: '', votes: 0 });
   }
 
-  /** Entfernt eine Antwortoption aus einer Frage */
-  removeAnswerOption(questionIndex: number, optionIndex: number): void {
-    this.newSurvey.questions[questionIndex].options.splice(optionIndex, 1);
+  removeAnswerOption(qIdx: number, oIdx: number): void {
+    this.newSurvey.questions[qIdx].options.splice(oIdx, 1);
   }
 
-  /** Fügt dem Umfrageblock eine weitere Frage hinzu */
   addNextQuestion(): void {
     this.newSurvey.questions.push({
       questionText: '',
@@ -112,50 +99,87 @@ export class AppComponent implements OnInit {
     });
   }
 
-  /** Entfernt eine Frage komplett aus der Liste */
-  removeQuestion(questionIndex: number): void {
-    this.newSurvey.questions.splice(questionIndex, 1);
+  removeQuestion(qIdx: number): void {
+    this.newSurvey.questions.splice(qIdx, 1);
   }
 
-  /** Übermittelt die erstellte Umfrage an Supabase */
-  publishSurvey(): void {
-    console.log('Publishing valid structural survey object:', this.newSurvey);
-    // Hier folgt deine Logik, z.B. this.supabaseService.addSurvey(this.newSurvey);
+  // ─── Publish ───────────────────────────────────────────────────────────────
+
+  async publishSurvey(): Promise<void> {
+    if (!this.newSurvey.title.trim()) return;
+    this.isPublishing = true;
+
+    const created = await this.supabaseService.addSurvey(this.newSurvey);
+
+    this.isPublishing = false;
     this.isCreating = false;
+    this.newSurvey = this.initNewSurveyStructure();
+
+    if (created) {
+      this.showPublishOverlay = true;
+      setTimeout(() => (this.showPublishOverlay = false), 4000);
+      this.selectedSurvey = created;
+    }
   }
 
-  /** Setzt die ausgewählte Umfrage für die Detailansicht. */
-  selectSurvey(survey: any): void {
-    this.isCreating = false;
-    this.selectedSurvey = JSON.parse(JSON.stringify(survey));
+  // ─── Voting ────────────────────────────────────────────────────────────────
+
+  registerVote(qIdx: number, oIdx: number): void {
+    if (!this.selectedSurvey) return;
+
+    const q = this.selectedSurvey.questions[qIdx];
+
+    // Logik für Single Choice (Radio Buttons): Setzt andere Votes zurück, falls gewünscht.
+    // Da wir aber inkrementell zählen, passen wir den aktuellen Klick an:
+    q.options[oIdx].votes = (q.options[oIdx].votes || 0) + 1;
+
+    this.supabaseService.submitVote(this.selectedSurvey.id, this.selectedSurvey.questions);
   }
 
-  /** Setzt die Detailansicht zurück und kehrt zum Dashboard zurück. */
-  goBack(): void {
-    this.selectedSurvey = null;
-  }
+  // ─── Berechnungen ──────────────────────────────────────────────────────────
 
-  /** Ändert den aktiven Dashboard-Filter. */
-  setFilter(filter: 'active' | 'past'): void {
-    this.currentFilter = filter;
-  }
-
-  /** Berechnet die Gesamtstimmen für eine bestimmte Frage. */
-  getQuestionTotal(question: any): number {
+  getQuestionTotal(question: PollQuestion): number {
     if (!question || !question.options) return 0;
-    return question.options.reduce((sum: number, opt: any) => sum + (opt.votes || 0), 0);
+    return question.options.reduce((sum, o) => sum + (o.votes || 0), 0);
   }
 
-  /** Berechnet den prozentualen Anteil einer Option an der Gesamtzahl. */
   getPercentage(votes: number, total: number): number {
     if (total === 0) return 0;
     return Math.round((votes / total) * 100);
   }
 
-  /** Erhöht die Stimmanzahl einer Option lokal und sendet sie an Supabase. */
-  registerVote(questionIndex: number, optionIndex: number): void {
-    const q = this.selectedSurvey.questions[questionIndex];
-    q.options[optionIndex].votes = (q.options[optionIndex].votes || 0) + 1;
-    this.supabaseService.submitVote(this.selectedSurvey.id, this.selectedSurvey.questions);
+  getTotalVotes(survey: Poll | null): number {
+    if (!survey || !survey.questions) return 0;
+    return survey.questions.reduce((sum, q) => sum + this.getQuestionTotal(q), 0);
+  }
+
+  formatDate(isoString: string | null): string {
+    if (!isoString) return 'Unbegrenzt';
+    return new Date(isoString).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  isActive(survey: Poll): boolean {
+    if (!survey.ends_at) return true; // Ohne Enddatum immer aktiv
+    return new Date(survey.ends_at) > new Date();
+  }
+
+  getFilteredSurveys(surveys: Poll[]): Poll[] {
+    if (!surveys) return [];
+    return surveys.filter((s) =>
+      this.currentFilter === 'active' ? this.isActive(s) : !this.isActive(s),
+    );
+  }
+
+  daysUntilEnd(endsAt: string | null): string {
+    if (!endsAt) return 'Open End';
+    const diff = Math.ceil((new Date(endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return 'Abgelaufen';
+    if (diff === 0) return 'Endet heute';
+    if (diff === 1) return 'Endet morgen';
+    return `Endet in ${diff} Tagen`;
   }
 }
