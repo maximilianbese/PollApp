@@ -1,3 +1,9 @@
+<!-- ===== GLOBALER TOAST ===== -->
+<div class="publish-overlay" *ngIf="showToast">
+  <span>Your survey is now published</span>
+  <button class="overlay-close" (click)="showToast = false">✕</button>
+</div>
+
 <!-- ===== DASHBOARD ===== -->
 <div class="dashboard-wrapper" *ngIf="!selectedSurvey && !isCreating">
   <header class="hero-section">
@@ -141,8 +147,9 @@
               <input type="text" [(ngModel)]="option.label" placeholder="Option text..." />
               <button
                 class="icon-delete"
-                *ngIf="question.options.length > 2"
                 (click)="removeAnswerOption(qIdx, oIdx)"
+                [style.opacity]="question.options.length <= 2 ? '0.3' : '1'"
+                [style.cursor]="question.options.length <= 2 ? 'not-allowed' : 'pointer'"
               >
                 <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
               </button>
@@ -188,18 +195,12 @@
       </button>
     </div>
   </div>
+</div>
 
-  <!-- OVERLAY TOAST nach Publish -->
-  <div class="publish-overlay" *ngIf="publishStatus === 'success'">
-    <span>Your survey is now published</span>
-    <button class="overlay-close" (click)="publishStatus = 'idle'">✕</button>
-  </div>
-
-  <!-- Fehlermeldung -->
-  <div class="publish-overlay error-overlay" *ngIf="publishStatus === 'error'">
-    <span>⚠️ {{ publishError }}</span>
-    <button class="overlay-close" (click)="publishStatus = 'idle'">✕</button>
-  </div>
+<!-- ===== FEHLERMELDUNG (global) ===== -->
+<div class="publish-overlay error-overlay" *ngIf="publishStatus === 'error'">
+  <span>⚠️ {{ publishError }}</span>
+  <button class="overlay-close" (click)="publishStatus = 'idle'">✕</button>
 </div>
 
 <!-- ===== SINGLE SURVEY VIEW ===== -->
