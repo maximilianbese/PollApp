@@ -2,37 +2,23 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-export interface PollOption {
-  text: string;
-  votes: number;
-  letter?: string;
-}
-
-export interface PollQuestion {
-  question_text: string;
-  allow_multiple: boolean;
-  options: PollOption[];
-}
-
-export interface Poll {
-  id: number;
-  created_at: string;
-  title: string;
-  description: string;
-  category: string;
-  ends_at: string | null;
-  questions: PollQuestion[];
-}
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root',
+})
 export class SupabaseService {
   private supabase: SupabaseClient;
-  private _surveys = new BehaviorSubject<Poll[]>([]);
-  public surveys$: Observable<Poll[]> = this._surveys.asObservable();
+  private _surveys = new BehaviorSubject<any[]>([]);
+  public surveys$: Observable<any[]> = this._surveys.asObservable();
 
+  // Deinen anon-Key hier eintragen (beginnt mit eyJ...)
   private url = 'https://ebfiqojuyoxbhtbqairo.supabase.co';
   private key =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViZmlxb2p1eW94Ymh0YnFhaXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMDg4MjYsImV4cCI6MjA5NDY4NDgyNn0.9PW9upRYNzzJhy8ZR4XImQJQcLrpqCPNS7e41c0WwsY';
+
+  // Welche optionalen Spalten tatsächlich existieren (wird beim ersten Fetch ermittelt)
+  private hasEndDate = false;
+  private hasDescription = false;
+  private hasCategory = false;
 
   constructor() {
     this.supabase = createClient(this.url, this.key);
@@ -41,111 +27,110 @@ export class SupabaseService {
   }
 
   async fetchSurveys(): Promise<void> {
-    const { data, error } = await this.supabase
-      .from('polls')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await this.supabase
+        .from('polls')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('fetchSurveys error:', error);
-      return;
-    }
-    if (data) {
-      this._surveys.next(data.map((p: any) => this.normalizePoll(p)));
+      if (error) {
+        console.warn('Supabase fetchSurveys Fehler:', error.message);
+        return;
+      }
+
+      if (data) {
+        // Beim ersten Datensatz prüfen welche Spalten vorhanden sind
+        if (data.length > 0) {
+          const cols = Object.keys(data[0]);
+          this.hasEndDate = cols.includes('end_date');
+          this.hasDescription = cols.includes('description');
+          this.hasCategory = cols.includes('category');
+          console.log('Verfügbare Spalten:', cols);
+        }
+        this._surveys.next(data);
+      }
+    } catch (e) {
+      console.warn('Netzwerkfehler beim Laden:', e);
     }
   }
 
-  async addSurvey(draft: {
-    title: string;
-    description: string;
-    endDate: string;
-    category: string;
-    questions: Array<{
-      questionText: string;
-      allowMultiple: boolean;
-      options: Array<{ label: string; votes: number }>;
-    }>;
-  }): Promise<Poll | null> {
-    const questions: PollQuestion[] = draft.questions.map((q) => ({
+  async addSurvey(survey: any): Promise<{ data: any; error: any }> {
+    const questions = survey.questions.map((q: any) => ({
       question_text: q.questionText,
       allow_multiple: q.allowMultiple,
-      options: q.options
-        .filter((o) => o.label.trim())
-        .map((o) => ({ text: o.label.trim(), votes: 0 })),
-    }));
-
-    const payload: Record<string, any> = {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      category: draft.category.trim() || 'Allgemein',
-      questions,
-    };
-
-    if (draft.endDate && draft.endDate.trim()) {
-      const parts = draft.endDate.trim().split('.');
-      if (parts.length === 3) {
-        const iso = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        if (!isNaN(Date.parse(iso))) payload['ends_at'] = new Date(iso).toISOString();
-      }
-    }
-
-    const { data, error } = await this.supabase.from('polls').insert([payload]).select().single();
-    if (error) {
-      console.error('addSurvey error:', error);
-      return null;
-    }
-    await this.fetchSurveys();
-    return this.normalizePoll(data);
-  }
-
-  async submitVote(id: number, updatedQuestions: PollQuestion[]): Promise<void> {
-    const { error } = await this.supabase
-      .from('polls')
-      .update({ questions: updatedQuestions })
-      .eq('id', id);
-    if (error) console.error('submitVote error:', error);
-  }
-
-  private normalizePoll(raw: any): Poll {
-    let rawQuestions = raw.questions;
-
-    // JSONB Sicherheits-Parsing
-    if (typeof rawQuestions === 'string') {
-      try {
-        rawQuestions = JSON.parse(rawQuestions);
-      } catch (e) {
-        console.error('Error parsing questions string:', e);
-        rawQuestions = [];
-      }
-    }
-
-    const questions: PollQuestion[] = (rawQuestions ?? []).map((q: any) => ({
-      question_text: q.question_text ?? q.questionText ?? '',
-      allow_multiple: q.allow_multiple ?? q.allowMultiple ?? false,
-      options: (q.options ?? []).map((o: any, i: number) => ({
-        text: o.text ?? o.label ?? '',
-        votes: o.votes ?? 0,
-        letter: o.letter ?? String.fromCharCode(65 + i),
+      options: q.options.map((o: any, i: number) => ({
+        letter: String.fromCharCode(65 + i),
+        text: o.label,
+        votes: 0,
       })),
     }));
 
-    return {
-      id: raw.id,
-      created_at: raw.created_at,
-      title: raw.title ?? '',
-      description: raw.description ?? '',
-      category: raw.category ?? 'Allgemein',
-      ends_at: raw.ends_at ?? null,
+    // Basis-Payload — nur Spalten die garantiert existieren
+    const payload: any = {
+      title: survey.title,
       questions,
     };
+
+    // Optionale Spalten nur hinzufügen wenn sie existieren
+    if (this.hasDescription) payload.description = survey.description || '';
+    if (this.hasCategory) payload.category = survey.category;
+    if (this.hasEndDate) payload.end_date = survey.endDate || null;
+
+    console.log('INSERT payload:', payload);
+
+    try {
+      const { data, error } = await this.supabase.from('polls').insert([payload]).select();
+
+      if (error) {
+        console.warn('Supabase Insert-Fehler:', error.message);
+
+        // Fallback: Ohne optionale Felder nochmal versuchen
+        console.log('Versuche minimalen Insert (nur title + questions)...');
+        const { data: d2, error: e2 } = await this.supabase
+          .from('polls')
+          .insert([{ title: survey.title, questions }])
+          .select();
+
+        if (e2) {
+          console.warn('Minimaler Insert auch fehlgeschlagen:', e2.message);
+          return { data: null, error: e2 };
+        }
+
+        await this.fetchSurveys();
+        return { data: d2, error: null };
+      }
+
+      await this.fetchSurveys();
+      return { data, error: null };
+    } catch (e: any) {
+      console.warn('Netzwerkfehler bei addSurvey:', e);
+      return { data: null, error: { message: e?.message || 'Netzwerkfehler' } };
+    }
+  }
+
+  async submitVote(id: number, updatedQuestions: any[]): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('polls')
+        .update({ questions: updatedQuestions })
+        .eq('id', id);
+
+      if (error) {
+        console.warn('Fehler beim Abstimmen:', error.message);
+      } else {
+        await this.fetchSurveys();
+      }
+    } catch (e) {
+      console.warn('Netzwerkfehler bei submitVote:', e);
+    }
   }
 
   private setupRealtime(): void {
     this.supabase
       .channel('polls-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () =>
-        this.fetchSurveys(),
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => {
+        this.fetchSurveys();
+      })
       .subscribe();
   }
 }
