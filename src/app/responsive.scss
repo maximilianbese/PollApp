@@ -1,0 +1,1098 @@
+// ==========================================================================
+// RESPONSIVE STYLES — Poll App
+// Mobile-first, min-width: 320px
+// Breakpoints: 320px | 480px | 768px | 1024px | 1280px
+// ==========================================================================
+
+// ---- Mixins ----
+@mixin xs {
+  @media (max-width: 479px) {
+    @content;
+  }
+}
+@mixin sm {
+  @media (min-width: 480px) {
+    @content;
+  }
+}
+@mixin md {
+  @media (min-width: 768px) {
+    @content;
+  }
+}
+@mixin lg {
+  @media (min-width: 1024px) {
+    @content;
+  }
+}
+@mixin xl {
+  @media (min-width: 1280px) {
+    @content;
+  }
+}
+
+// ==========================================================================
+// BASE — alle Screens
+// ==========================================================================
+
+html,
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// ==========================================================================
+// DASHBOARD — HERO
+// ==========================================================================
+
+.dashboard-wrapper {
+  overflow-x: hidden;
+}
+
+.hero-section {
+  padding: 24px 16px 48px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+
+  @include sm {
+    padding: 32px 24px 56px;
+  }
+  @include md {
+    padding: 40px 5% 64px;
+  }
+  @include lg {
+    padding: 40px 10% 80px;
+  }
+
+  .hero-content {
+    flex-direction: column;
+    gap: 32px;
+    margin-top: 32px;
+
+    @include md {
+      flex-direction: row;
+      align-items: center;
+      gap: 40px;
+      margin-top: 48px;
+    }
+
+    @include lg {
+      gap: 50px;
+      margin-top: 60px;
+    }
+  }
+
+  .hero-text {
+    h1 {
+      font-size: clamp(36px, 10vw, 72px);
+      margin-bottom: 16px;
+
+      @include md {
+        font-size: clamp(56px, 7vw, 90px);
+      }
+      @include lg {
+        font-size: 100px;
+      }
+    }
+
+    p {
+      font-size: clamp(15px, 3.5vw, 20px);
+      margin-bottom: 28px;
+
+      @include md {
+        font-size: 20px;
+        margin-bottom: 36px;
+      }
+      @include lg {
+        font-size: 24px;
+        margin-bottom: 40px;
+      }
+    }
+  }
+
+  .hero-illustration {
+    display: flex;
+    justify-content: center;
+
+    @include md {
+      flex: 0 0 auto;
+    }
+  }
+
+  .hero-img {
+    width: 100%;
+    max-width: 280px;
+
+    @include sm {
+      max-width: 320px;
+    }
+    @include md {
+      max-width: 360px;
+    }
+    @include lg {
+      max-width: 420px;
+    }
+  }
+}
+
+.btn-primary {
+  font-size: clamp(14px, 3.5vw, 18px);
+  padding: 12px 22px;
+
+  @include md {
+    padding: 14px 28px;
+    font-size: 18px;
+  }
+
+  img {
+    height: 18px;
+    @include md {
+      height: 20px;
+    }
+  }
+}
+
+// ==========================================================================
+// LOGO
+// ==========================================================================
+
+.logo-img {
+  width: 90px;
+  height: auto;
+
+  @include sm {
+    width: 100px;
+  }
+  @include md {
+    width: 120px;
+  }
+}
+
+// ==========================================================================
+// SURVEYS CONTAINER — Hauptliste
+// ==========================================================================
+
+.surveys-container {
+  padding: 32px 16px;
+
+  @include sm {
+    padding: 40px 20px;
+  }
+  @include md {
+    padding: 48px 5%;
+  }
+  @include lg {
+    padding: 60px 10%;
+  }
+
+  .main-title {
+    font-size: clamp(40px, 12vw, 64px);
+    margin: 24px 0;
+    text-align: center;
+
+    @include md {
+      font-size: clamp(56px, 8vw, 80px);
+      margin: 32px 0 40px;
+    }
+    @include lg {
+      font-size: 80px;
+      margin: 40px 0;
+    }
+  }
+
+  .section-subtitle {
+    font-size: clamp(18px, 4.5vw, 24px);
+    margin-bottom: 20px;
+
+    @include md {
+      font-size: 24px;
+      margin-bottom: 28px;
+    }
+    @include lg {
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+  }
+}
+
+// ==========================================================================
+// ENDING SOON GRID — oben
+// ==========================================================================
+
+.ending-soon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 36px;
+
+  @include sm {
+    gap: 18px;
+  }
+
+  @include md {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-bottom: 48px;
+  }
+
+  @include lg {
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .ending-card {
+    padding: 20px;
+    height: auto;
+    min-height: 160px;
+    border-radius: 16px 48px 16px 16px;
+
+    @include sm {
+      padding: 24px;
+      min-height: 180px;
+      border-radius: 18px 60px 18px 18px;
+    }
+    @include md {
+      padding: 28px;
+      height: 200px;
+      border-radius: 20px 70px 20px 20px;
+    }
+    @include lg {
+      padding: 35px;
+      height: 240px;
+      border-radius: 20px 80px 20px 20px;
+    }
+
+    .card-category {
+      font-size: 12px;
+      @include md {
+        font-size: 14px;
+      }
+    }
+
+    h4 {
+      font-size: clamp(14px, 3.5vw, 20px);
+      margin: 10px 0 auto;
+
+      @include md {
+        font-size: 20px;
+        margin: 14px 0 auto;
+      }
+      @include lg {
+        font-size: 24px;
+        margin: 15px 0 auto;
+      }
+    }
+  }
+}
+
+// ==========================================================================
+// FILTER BAR
+// ==========================================================================
+
+.filter-bar {
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+
+  @include md {
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+
+    button {
+      font-size: clamp(13px, 3vw, 16px);
+      padding: 8px 16px;
+
+      @include md {
+        font-size: 16px;
+        padding: 10px 24px;
+      }
+    }
+  }
+}
+
+// ==========================================================================
+// SURVEYS GRID — untere Liste
+// ==========================================================================
+
+.surveys-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @include sm {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  @include lg {
+    gap: 24px;
+  }
+
+  .survey-list-item {
+    padding: 18px 20px;
+    min-height: auto;
+    border-radius: 16px;
+
+    @include sm {
+      padding: 20px 24px;
+      border-radius: 18px;
+    }
+    @include md {
+      padding: 22px 28px;
+      min-height: 100px;
+      border-radius: 20px;
+    }
+    @include lg {
+      padding: 24px 32px;
+      min-height: 110px;
+    }
+
+    .item-category {
+      font-size: 12px;
+      @include md {
+        font-size: 14px;
+      }
+    }
+
+    h4 {
+      font-size: clamp(14px, 3.5vw, 18px);
+      @include md {
+        font-size: 18px;
+      }
+      @include lg {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+// ==========================================================================
+// BADGE
+// ==========================================================================
+
+.badge-time {
+  font-size: 11px;
+  padding: 5px 10px;
+
+  @include md {
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+}
+
+// ==========================================================================
+// CREATE SURVEY — Formular
+// ==========================================================================
+
+.create-survey-wrapper {
+  padding: 16px;
+
+  @include sm {
+    padding: 24px;
+  }
+  @include md {
+    padding: 32px 5%;
+  }
+  @include lg {
+    padding: 40px 10%;
+  }
+}
+
+.create-survey-card {
+  padding: 24px 20px;
+  border-radius: 20px 48px 20px 20px;
+
+  @include sm {
+    padding: 28px 24px;
+    border-radius: 24px 72px 24px 24px;
+  }
+  @include md {
+    padding: 32px;
+    border-radius: 24px 96px 24px 24px;
+  }
+  @include lg {
+    padding: 40px;
+    border-radius: 24px 120px 24px 24px;
+  }
+
+  .card-top-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    @include md {
+      margin-bottom: 28px;
+    }
+    @include lg {
+      margin-bottom: 30px;
+    }
+  }
+
+  h2 {
+    font-size: clamp(28px, 8vw, 44px);
+    margin: 10px 0 0;
+
+    @include md {
+      font-size: clamp(40px, 6vw, 52px);
+      margin: 12px 0 0;
+    }
+    @include lg {
+      font-size: 56px;
+      margin: 15px 0 0;
+    }
+  }
+
+  .btn-cancel {
+    font-size: 13px;
+    padding: 8px 14px;
+
+    @include md {
+      font-size: 14px;
+      padding: 10px 18px;
+    }
+    @include lg {
+      font-size: 16px;
+      padding: 10px 20px;
+    }
+  }
+}
+
+// Form-Layout: mobile = single column, desktop = 2 columns
+.form-split-layout {
+  grid-template-columns: 1fr;
+  gap: 20px;
+
+  @include md {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 32px;
+  }
+
+  @include lg {
+    gap: 40px;
+  }
+}
+
+.form-column {
+  gap: 18px;
+
+  @include md {
+    gap: 22px;
+  }
+  @include lg {
+    gap: 24px;
+  }
+}
+
+// Form group
+.form-group {
+  label {
+    font-size: 13px;
+    @include md {
+      font-size: 15px;
+    }
+    @include lg {
+      font-size: 16px;
+    }
+  }
+
+  input[type='text'],
+  textarea {
+    font-size: 14px;
+    padding: 12px 40px 12px 14px;
+    border-radius: 10px;
+
+    @include md {
+      font-size: 15px;
+      padding: 13px 45px 13px 16px;
+      border-radius: 12px;
+    }
+    @include lg {
+      font-size: 16px;
+      padding: 14px 45px 14px 16px;
+      border-radius: 14px;
+    }
+  }
+
+  textarea {
+    height: 100px;
+    border-radius: 10px 32px 10px 10px;
+
+    @include md {
+      height: 115px;
+      border-radius: 12px 36px 12px 12px;
+    }
+    @include lg {
+      height: 130px;
+      border-radius: 14px 40px 14px 14px;
+    }
+  }
+
+  .row-inputs {
+    flex-direction: column;
+    gap: 14px;
+
+    @include sm {
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 16px;
+    }
+    @include lg {
+      gap: 20px;
+    }
+  }
+}
+
+// Icon-Delete-Button (Mülleimer)
+// Mobil: ins Input-Feld einrücken, damit es nicht aus der Card rausragt
+.icon-delete {
+  right: 10px;
+  bottom: 12px;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+
+  // Ab Desktop: originale Position außerhalb des Inputs
+  @include md {
+    right: -28px;
+    bottom: 14px;
+
+    img {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  @include lg {
+    right: -30px;
+
+    img {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// Damit das Icon sichtbar bleibt, braucht das Input-Feld rechts Platz
+.form-group {
+  input[type='text'],
+  input[type='date'],
+  textarea {
+    // Mobil: rechts Platz für das Icon lassen
+    padding-right: 40px;
+
+    @include md {
+      // Desktop: Icon ist außerhalb, normales Padding
+      padding-right: 16px;
+    }
+  }
+}
+
+// Question Builder
+.question-builder-section {
+  padding-top: 18px;
+
+  @include md {
+    padding-top: 22px;
+  }
+  @include lg {
+    padding-top: 24px;
+  }
+
+  .question-title-row h3 {
+    font-size: 15px;
+    @include md {
+      font-size: 17px;
+    }
+    @include lg {
+      font-size: 18px;
+    }
+  }
+
+  .answers-heading-row {
+    margin: 18px 0 12px;
+
+    @include md {
+      margin: 22px 0 14px;
+    }
+    @include lg {
+      margin: 24px 0 16px;
+    }
+
+    h4 {
+      font-size: 15px;
+      @include md {
+        font-size: 17px;
+      }
+      @include lg {
+        font-size: 18px;
+      }
+    }
+  }
+
+  .checkbox-label {
+    font-size: 13px;
+    @include md {
+      font-size: 14px;
+    }
+  }
+
+  .answer-input-row {
+    margin-bottom: 12px;
+
+    @include md {
+      margin-bottom: 14px;
+    }
+    @include lg {
+      margin-bottom: 16px;
+    }
+
+    .prefix {
+      font-size: 15px;
+      @include md {
+        font-size: 17px;
+      }
+      @include lg {
+        font-size: 18px;
+      }
+    }
+  }
+}
+
+.btn-text-action {
+  font-size: 14px;
+  @include md {
+    font-size: 15px;
+  }
+  @include lg {
+    font-size: 16px;
+  }
+}
+
+.btn-secondary-action {
+  font-size: 13px;
+  padding: 10px 18px;
+
+  @include md {
+    font-size: 15px;
+    padding: 12px 22px;
+  }
+  @include lg {
+    font-size: 16px;
+    padding: 12px 24px;
+  }
+}
+
+.card-footer-actions {
+  margin-top: 16px;
+  justify-content: center;
+
+  @include md {
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .btn-publish {
+    width: 100%;
+    font-size: 15px;
+    padding: 13px;
+
+    @include sm {
+      width: auto;
+    }
+    @include md {
+      font-size: 16px;
+      padding: 14px 28px;
+    }
+    @include lg {
+      font-size: 18px;
+      padding: 14px 36px;
+    }
+  }
+}
+
+// Category Dropdown
+.category-select-wrapper {
+  .category-trigger {
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+
+    @include md {
+      font-size: 15px;
+      padding: 14px 16px;
+      border-radius: 14px;
+    }
+  }
+
+  .category-option {
+    font-size: 14px;
+    padding: 11px 16px;
+
+    @include md {
+      font-size: 15px;
+      padding: 13px 18px;
+    }
+  }
+}
+
+// Date input
+input[type='date'] {
+  font-size: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+
+  @include md {
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+}
+
+// ==========================================================================
+// SINGLE SURVEY VIEW
+// ==========================================================================
+
+.top-nav {
+  padding: 14px 16px;
+
+  @include sm {
+    padding: 16px 20px;
+  }
+  @include md {
+    padding: 20px 5%;
+  }
+
+  .btn-create-nav {
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 10px;
+
+    @include md {
+      font-size: 15px;
+      padding: 12px 24px;
+      border-radius: 12px;
+    }
+  }
+}
+
+// Split-Layout: mobil untereinander, Desktop nebeneinander
+.split-layout {
+  grid-template-columns: 1fr;
+  min-height: unset;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 80px);
+  }
+}
+
+// Linke Seite
+.survey-form-side {
+  padding: 28px 16px 40px;
+  gap: 24px;
+  border-right: none;
+  border-bottom: 1px solid #ecddd4;
+
+  @include sm {
+    padding: 32px 20px 40px;
+  }
+
+  @include md {
+    padding: 40px 4% 40px 5%;
+    gap: 28px;
+    border-right: 1px solid #ecddd4;
+    border-bottom: none;
+  }
+
+  @include lg {
+    padding: 50px 5%;
+    gap: 32px;
+  }
+}
+
+.survey-header-card {
+  .badge-published {
+    font-size: 12px;
+    padding: 4px 12px;
+
+    @include md {
+      font-size: 13px;
+      padding: 5px 14px;
+    }
+  }
+
+  .meta-row {
+    font-size: 12px;
+    gap: 14px;
+    margin-bottom: 12px;
+
+    @include md {
+      font-size: 13px;
+      gap: 24px;
+      margin-bottom: 14px;
+    }
+  }
+
+  h2 {
+    font-size: clamp(28px, 8vw, 44px);
+    margin-bottom: 12px;
+
+    @include md {
+      font-size: clamp(36px, 5.5vw, 50px);
+      margin-bottom: 14px;
+    }
+    @include lg {
+      font-size: 52px;
+      margin-bottom: 16px;
+    }
+  }
+
+  p {
+    font-size: 13px;
+    @include md {
+      font-size: 14px;
+    }
+  }
+}
+
+// Fragen-Grid: mobil 1-spaltig, Desktop 2-spaltig
+.questions-form-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @include lg {
+    gap: 32px;
+  }
+}
+
+.question-block {
+  h3 {
+    font-size: 13px;
+    @include md {
+      font-size: 14px;
+    }
+    @include lg {
+      font-size: 15px;
+    }
+  }
+
+  .sub-info {
+    font-size: 11px;
+    @include md {
+      font-size: 12px;
+    }
+  }
+}
+
+.options-vertical {
+  gap: 8px;
+  @include md {
+    gap: 10px;
+  }
+}
+
+.checkbox-option {
+  .option-text {
+    font-size: 13px;
+    @include md {
+      font-size: 14px;
+    }
+  }
+}
+
+.form-actions {
+  .btn-complete {
+    width: 100%;
+    font-size: 14px;
+    padding: 13px 28px;
+    text-align: center;
+
+    @include sm {
+      width: auto;
+    }
+    @include md {
+      font-size: 16px;
+      padding: 14px 36px;
+    }
+  }
+}
+
+// Rechte Seite — Ergebnisse
+.survey-results-side {
+  padding: 28px 16px;
+  gap: 20px;
+
+  @include sm {
+    padding: 32px 20px;
+  }
+  @include md {
+    padding: 40px 4% 40px 4%;
+    gap: 28px;
+  }
+  @include lg {
+    padding: 50px 5%;
+    gap: 32px;
+  }
+
+  h3 {
+    font-size: 18px;
+    @include md {
+      font-size: 20px;
+    }
+    @include lg {
+      font-size: 22px;
+    }
+  }
+}
+
+.result-block {
+  h4 {
+    font-size: 13px;
+    @include md {
+      font-size: 14px;
+    }
+    @include lg {
+      font-size: 15px;
+    }
+  }
+}
+
+.result-bars-container {
+  gap: 6px;
+  @include md {
+    gap: 8px;
+  }
+}
+
+.result-bar-row {
+  gap: 8px;
+
+  @include md {
+    gap: 10px;
+  }
+
+  .letter-label {
+    font-size: 12px;
+    @include md {
+      font-size: 13px;
+    }
+  }
+
+  .bar-wrapper {
+    height: 12px;
+    @include md {
+      height: 14px;
+    }
+  }
+
+  .percentage-label {
+    font-size: 12px;
+    min-width: 30px;
+
+    @include md {
+      font-size: 13px;
+      min-width: 36px;
+    }
+  }
+}
+
+// ==========================================================================
+// TOAST / OVERLAY
+// ==========================================================================
+
+.publish-overlay {
+  left: 50%;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  bottom: 20px;
+  padding: 14px 20px;
+  font-size: 14px;
+  border-radius: 12px;
+  transform: translateX(-50%);
+
+  @include md {
+    width: auto;
+    bottom: 32px;
+    padding: 16px 28px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+  @include lg {
+    bottom: 40px;
+    padding: 18px 32px;
+    font-size: 16px;
+  }
+}
+
+// ==========================================================================
+// SMALL TOUCH TARGETS
+// ==========================================================================
+
+@include xs {
+  // Sicherstellen dass alle Buttons mindestens 44px Tipp-Fläche haben
+  .btn-primary,
+  .btn-cancel,
+  .btn-secondary-action,
+  .btn-publish,
+  .btn-complete,
+  .btn-create-nav,
+  .tabs button {
+    min-height: 44px;
+  }
+}
+
+// ==========================================================================
+// UTILITY: Verstecken bei Breakpoints
+// ==========================================================================
+
+// Hero-Illustration nur ab 480px zeigen (unter 480px zu wenig Platz)
+.hero-illustration {
+  @include xs {
+    display: none;
+  }
+}
+
+// Badge-Draft responsiv
+.badge-draft {
+  font-size: 12px;
+  padding: 5px 12px;
+
+  @include md {
+    font-size: 14px;
+    padding: 6px 14px;
+  }
+}
+
+// ==========================================================================
+// SCROLLBAR (WebKit)
+// ==========================================================================
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}

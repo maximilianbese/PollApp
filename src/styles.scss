@@ -27,3 +27,15 @@ body {
   font-style: italic;
   padding: 24px 0;
 }
+
+// Mobile base resets
+* {
+  box-sizing: border-box;
+}
+html {
+  overflow-x: hidden;
+}
+body {
+  overflow-x: hidden;
+  min-width: 320px;
+}
