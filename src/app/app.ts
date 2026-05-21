@@ -25,8 +25,26 @@ export class AppComponent implements OnInit {
   publishError: string = '';
   showToast: boolean = false;
 
-  // Tracks welche Option pro Frage gewählt wurde (Single-Choice)
   selectedOptions: { [qi: number]: number } = {};
+
+  categoryDropdownOpen: boolean = false;
+  categories: string[] = [
+    'Team Activities',
+    'Health & Wellness',
+    'Gaming & Entertainment',
+    'Education & Learning',
+    'Lifestyle & Preferences',
+    'Technology & Innovation',
+  ];
+
+  toggleCategoryDropdown(): void {
+    this.categoryDropdownOpen = !this.categoryDropdownOpen;
+  }
+
+  selectCategory(cat: string): void {
+    this.newSurvey.category = cat;
+    this.categoryDropdownOpen = false;
+  }
 
   constructor(private supabaseService: SupabaseService) {}
 
@@ -43,6 +61,44 @@ export class AppComponent implements OnInit {
       },
     });
   }
+
+  // ── FILTER HELPERS ──────────────────────────────────────────────────────
+
+  /** Umfrage ist abgelaufen wenn end_date in der Vergangenheit liegt */
+  isSurveyExpired(survey: any): boolean {
+    if (!survey.end_date) return false;
+    const end = new Date(survey.end_date);
+    end.setHours(23, 59, 59, 999);
+    return end < new Date();
+  }
+
+  /** Aktive Umfragen: kein Enddatum oder Enddatum in der Zukunft */
+  getActiveSurveys(surveys: any[]): any[] {
+    return surveys.filter((s) => !this.isSurveyExpired(s));
+  }
+
+  /** Abgeschlossene Umfragen: Enddatum in der Vergangenheit */
+  getPastSurveys(surveys: any[]): any[] {
+    return surveys.filter((s) => this.isSurveyExpired(s));
+  }
+
+  /** US1: "Ending soon" — nur Umfragen MIT Enddatum, chronologisch sortiert, max 3 */
+  getEndingSoonSurveys(surveys: any[]): any[] {
+    return surveys
+      .filter((s) => s.end_date && !this.isSurveyExpired(s))
+      .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())
+      .slice(0, 3);
+  }
+
+  /** Aktuell angezeigte Liste je nach Filter-Tab */
+  getFilteredSurveys(surveys: any[]): any[] {
+    if (this.currentFilter === 'past') {
+      return this.getPastSurveys(surveys);
+    }
+    return this.getActiveSurveys(surveys);
+  }
+
+  // ── CREATE SURVEY ────────────────────────────────────────────────────────
 
   openCreateMode(): void {
     this.newSurvey = this.initNewSurveyStructure();
@@ -65,7 +121,7 @@ export class AppComponent implements OnInit {
       category: 'Team activities',
       questions: [
         {
-          questionText: 'Which date would work best for you?',
+          questionText: '',
           allowMultiple: false,
           options: [
             { label: '', votes: 0 },
@@ -85,7 +141,6 @@ export class AppComponent implements OnInit {
   }
 
   removeAnswerOption(qi: number, oi: number): void {
-    // Mindestens 2 Antworten behalten
     if (this.newSurvey.questions[qi].options.length > 2) {
       this.newSurvey.questions[qi].options.splice(oi, 1);
     }
@@ -106,19 +161,18 @@ export class AppComponent implements OnInit {
     this.newSurvey.questions.splice(qi, 1);
   }
 
-  /** Validierung: Gibt Fehlermeldung zurück oder null wenn alles ok */
   private validate(): string | null {
     if (!this.newSurvey.title.trim()) {
-      return 'Please enter a survey title.';
+      return 'Survey name is required.';
     }
     for (let qi = 0; qi < this.newSurvey.questions.length; qi++) {
       const q = this.newSurvey.questions[qi];
       if (!q.questionText.trim()) {
-        return `Question ${qi + 1} needs a text.`;
+        return `Question ${qi + 1} text is required.`;
       }
       for (let oi = 0; oi < q.options.length; oi++) {
         if (!q.options[oi].label.trim()) {
-          return `Question ${qi + 1}: Answer ${this.getLetterPrefix(oi)} needs a text.`;
+          return `Question ${qi + 1}: Answer ${this.getLetterPrefix(oi)} text is required.`;
         }
       }
     }
@@ -153,7 +207,6 @@ export class AppComponent implements OnInit {
   }
 
   publishSurvey(): void {
-    // Validierung
     const validationError = this.validate();
     if (validationError) {
       this.publishError = validationError;
@@ -162,9 +215,9 @@ export class AppComponent implements OnInit {
     }
 
     const payload = this.buildPayload(this.newSurvey);
-    const surveyToSave = { ...this.newSurvey };
+    const surveyToSave = { ...this.newSurvey, questions: [...this.newSurvey.questions] };
 
-    // SOFORT zur Startseite navigieren — kein await, kein Warten
+    // Sofort zur Startseite
     this.isCreating = false;
     this.selectedSurvey = null;
     this.publishStatus = 'idle';
@@ -174,24 +227,26 @@ export class AppComponent implements OnInit {
       this.showToast = false;
     }, 3000);
 
-    // Im Hintergrund speichern (fire & forget)
+    // Im Hintergrund speichern
     this.supabaseService
       .addSurvey(surveyToSave)
       .then((result) => {
         if (result?.error) {
           console.warn('Supabase Fehler:', result.error.message, '→ lokal gespeichert');
           this.saveLocally(payload);
-        } else {
-          console.log('Erfolgreich gespeichert');
         }
       })
       .catch((e) => {
-        console.warn('Fehler beim Speichern:', e);
+        console.warn('Fehler:', e);
         this.saveLocally(payload);
       });
   }
 
+  // ── SURVEY DETAIL ────────────────────────────────────────────────────────
+
   selectSurvey(survey: any): void {
+    // Abgeschlossene Umfragen sind nicht klickbar (US4)
+    if (this.isSurveyExpired(survey)) return;
     this.isCreating = false;
     this.selectedSurvey = JSON.parse(JSON.stringify(survey));
     this.selectedOptions = {};
@@ -205,6 +260,8 @@ export class AppComponent implements OnInit {
   setFilter(f: 'active' | 'past'): void {
     this.currentFilter = f;
   }
+
+  // ── VOTING ───────────────────────────────────────────────────────────────
 
   getQuestionTotal(q: any): number {
     if (!q?.options) return 0;
@@ -221,14 +278,19 @@ export class AppComponent implements OnInit {
     return Math.round((votes / total) * 100);
   }
 
-  registerVote(qi: number, oi: number): void {
+  registerVote(qi: number, oi: number, event: Event): void {
     const q = this.selectedSurvey.questions[qi];
+    const checked = (event.target as HTMLInputElement).checked;
 
     if (q.allow_multiple) {
-      q.options[oi].votes = (q.options[oi].votes || 0) + 1;
+      if (checked) {
+        q.options[oi].votes = (q.options[oi].votes || 0) + 1;
+      } else {
+        q.options[oi].votes = Math.max(0, (q.options[oi].votes || 1) - 1);
+      }
     } else {
       const prev = this.selectedOptions[qi];
-      if (prev === oi) return; // Gleiche Option nochmal → nichts tun
+      if (prev === oi) return;
       if (prev !== undefined) {
         q.options[prev].votes = Math.max(0, (q.options[prev].votes || 1) - 1);
       }
@@ -236,22 +298,26 @@ export class AppComponent implements OnInit {
       this.selectedOptions[qi] = oi;
     }
 
+    // Lokal aktualisieren für sofortige UI-Reaktion
     const surveys = this._localSurveys
       .getValue()
       .map((s: any) => (s.id === this.selectedSurvey.id ? { ...this.selectedSurvey } : s));
     this._localSurveys.next(surveys);
 
+    // In Supabase speichern
     if (!String(this.selectedSurvey.id).startsWith('local-')) {
       this.supabaseService.submitVote(this.selectedSurvey.id, this.selectedSurvey.questions);
     }
   }
+
+  // ── HELPERS ──────────────────────────────────────────────────────────────
 
   getDaysRemaining(endDate: string): string {
     if (!endDate) return 'No end date';
     const end = new Date(endDate);
     const now = new Date();
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff < 0) return 'Ends on ' + end.toLocaleDateString('de-DE');
+    if (diff < 0) return 'Ended ' + end.toLocaleDateString('de-DE');
     if (diff === 0) return 'Ends today';
     if (diff === 1) return 'Ends in 1 day';
     return `Ends in ${diff} days`;
