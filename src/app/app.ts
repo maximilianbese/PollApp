@@ -19,7 +19,7 @@ import { FormsModule } from '@angular/forms';
 import { Observable, BehaviorSubject } from 'rxjs';
 
 import { SupabaseService } from './services/supabase';
-import { Survey, NewSurveyDraft, PublishStatus, SurveyFilter } from './models/survey.models';
+import { Survey, NewSurveyDraft, PublishStatus, SurveyFilter } from './models/surveys.models';
 import {
   isSurveyExpired,
   getActiveSurveys,
@@ -260,10 +260,9 @@ export class AppComponent implements OnInit {
    */
   private persistSurvey(): void {
     const payload = buildSurveyPayload(this.newSurvey);
-    const snapshot = { ...this.newSurvey, questions: [...this.newSurvey.questions] };
     this.resetAfterPublish();
     this.supabaseService
-      .addSurvey(snapshot)
+      .addSurvey(payload)
       .then((r) => {
         if (r?.error) this.saveLocally(payload);
       })

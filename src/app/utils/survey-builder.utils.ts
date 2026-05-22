@@ -4,7 +4,7 @@
  * converting draft shapes into Supabase-compatible insert payloads.
  */
 
-import { NewOptionDraft, NewQuestionDraft, NewSurveyDraft } from '../models/survey.models';
+import { NewOptionDraft, NewQuestionDraft, NewSurveyDraft } from '../models/surveys.models';
 
 /**
  * Returns a letter prefix string for an answer option index.
@@ -46,7 +46,7 @@ export function createEmptySurveyDraft(): NewSurveyDraft {
     title: '',
     description: '',
     endDate: '',
-    category: 'Team activities',
+    category: 'Team Activities',
     questions: [createEmptyQuestion()],
   };
 }

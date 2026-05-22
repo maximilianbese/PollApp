@@ -4,7 +4,7 @@
  * vote percentage computations.  All functions are side-effect-free.
  */
 
-import { Survey, SurveyQuestion, SurveyOption } from '../models/survey.models';
+import { Survey, SurveyQuestion, SurveyOption } from '../models/surveys.models';
 
 /**
  * Determines whether a survey's voting window has closed.

@@ -8,7 +8,8 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Survey } from '../models/survey.models';
+import { Survey } from '../models/surveys.models';
+import { environment } from '../../environments/environment';
 
 /** @internal Column presence flags determined after the first successful fetch. */
 interface ColumnFlags {
@@ -37,9 +38,8 @@ export class SupabaseService {
   /** Emits the latest list of surveys whenever the database changes. */
   public surveys$: Observable<Survey[]> = this._surveys.asObservable();
 
-  private readonly url = 'https://ebfiqojuyoxbhtbqairo.supabase.co';
-  private readonly key =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViZmlxb2p1eW94Ymh0YnFhaXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMDg4MjYsImV4cCI6MjA5NDY4NDgyNn0.9PW9upRYNzzJhy8ZR4XImQJQcLrpqCPNS7e41c0WwsY';
+  private readonly url = environment.supabaseUrl;
+  private readonly key = environment.supabaseKey;
 
   private columns: ColumnFlags = {
     hasEndDate: false,
@@ -96,15 +96,15 @@ export class SupabaseService {
    * @returns The inserted record and error state.
    */
   async addSurvey(survey: any): Promise<ServiceResult> {
-    const questions = this.mapQuestionsForInsert(survey.questions);
-    const payload = this.buildInsertPayload(survey, questions);
+    // survey is already a built payload from buildSurveyPayload()
+    const payload = this.buildInsertPayload(survey, survey.questions);
     try {
       const result = await this.tryInsert(payload);
       if (!result.error) {
         await this.fetchSurveys();
         return result;
       }
-      return await this.tryMinimalInsert(survey.title, questions);
+      return await this.tryMinimalInsert(survey.title, survey.questions);
     } catch (e: any) {
       console.warn('Network error in addSurvey:', e);
       return { data: null, error: { message: e?.message ?? 'Network error' } };
@@ -153,7 +153,27 @@ export class SupabaseService {
    * @param data - Raw rows returned from Supabase.
    */
   private detectColumns(data: any[]): void {
-    if (data.length === 0) return;
+    if (data.length === 0) {
+      // Try fetching one row to detect columns even when the table is empty
+      this.supabase
+        .from('polls')
+        .select('*')
+        .limit(1)
+        .then(({ data: probe }) => {
+          if (probe && probe.length > 0) {
+            const cols = Object.keys(probe[0]);
+            this.columns = {
+              hasEndDate: cols.includes('end_date'),
+              hasDescription: cols.includes('description'),
+              hasCategory: cols.includes('category'),
+            };
+          } else {
+            // Assume all optional columns exist as a safe default
+            this.columns = { hasEndDate: true, hasDescription: true, hasCategory: true };
+          }
+        });
+      return;
+    }
     const cols = Object.keys(data[0]);
     this.columns = {
       hasEndDate: cols.includes('end_date'),
