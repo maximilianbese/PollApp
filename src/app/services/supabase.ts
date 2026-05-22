@@ -1,24 +1,51 @@
+/**
+ * @file supabase.ts
+ * @description Angular service that wraps the Supabase client.
+ * Handles fetching surveys, inserting new ones, submitting votes and
+ * subscribing to real-time database changes.
+ */
+
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { Survey } from '../models/survey.models';
 
+/** @internal Column presence flags determined after the first successful fetch. */
+interface ColumnFlags {
+  hasEndDate: boolean;
+  hasDescription: boolean;
+  hasCategory: boolean;
+}
+
+/** @internal Result shape returned by insert operations. */
+interface ServiceResult<T = unknown> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+/**
+ * Provides reactive access to the Supabase `polls` table and exposes
+ * methods for creating and voting on surveys.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
-  private _surveys = new BehaviorSubject<any[]>([]);
-  public surveys$: Observable<any[]> = this._surveys.asObservable();
+  private _surveys = new BehaviorSubject<Survey[]>([]);
 
-  // Deinen anon-Key hier eintragen (beginnt mit eyJ...)
-  private url = 'https://ebfiqojuyoxbhtbqairo.supabase.co';
-  private key =
+  /** Emits the latest list of surveys whenever the database changes. */
+  public surveys$: Observable<Survey[]> = this._surveys.asObservable();
+
+  private readonly url = 'https://ebfiqojuyoxbhtbqairo.supabase.co';
+  private readonly key =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViZmlxb2p1eW94Ymh0YnFhaXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMDg4MjYsImV4cCI6MjA5NDY4NDgyNn0.9PW9upRYNzzJhy8ZR4XImQJQcLrpqCPNS7e41c0WwsY';
 
-  // Welche optionalen Spalten tatsächlich existieren (wird beim ersten Fetch ermittelt)
-  private hasEndDate = false;
-  private hasDescription = false;
-  private hasCategory = false;
+  private columns: ColumnFlags = {
+    hasEndDate: false,
+    hasDescription: false,
+    hasCategory: false,
+  };
 
   constructor() {
     this.supabase = createClient(this.url, this.key);
@@ -26,36 +53,123 @@ export class SupabaseService {
     this.setupRealtime();
   }
 
+  /**
+   * Loads all surveys from the `polls` table ordered by creation date
+   * (newest first) and pushes the result into {@link surveys$}.
+   *
+   * Also detects which optional columns exist in the first returned row
+   * so that subsequent inserts can conditionally include them.
+   */
   async fetchSurveys(): Promise<void> {
     try {
       const { data, error } = await this.supabase
         .from('polls')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) {
-        console.warn('Supabase fetchSurveys Fehler:', error.message);
+        console.warn('Supabase fetchSurveys error:', error.message);
         return;
       }
-
-      if (data) {
-        // Beim ersten Datensatz prüfen welche Spalten vorhanden sind
-        if (data.length > 0) {
-          const cols = Object.keys(data[0]);
-          this.hasEndDate = cols.includes('end_date');
-          this.hasDescription = cols.includes('description');
-          this.hasCategory = cols.includes('category');
-          console.log('Verfügbare Spalten:', cols);
-        }
-        this._surveys.next(data);
-      }
+      if (data) this.handleFetchedData(data);
     } catch (e) {
-      console.warn('Netzwerkfehler beim Laden:', e);
+      console.warn('Network error while loading surveys:', e);
     }
   }
 
-  async addSurvey(survey: any): Promise<{ data: any; error: any }> {
-    const questions = survey.questions.map((q: any) => ({
+  /**
+   * Processes a successful fetch result: detects available columns and
+   * pushes the data into the reactive stream.
+   *
+   * @param data - Raw rows returned from the `polls` table.
+   */
+  private handleFetchedData(data: any[]): void {
+    this.detectColumns(data);
+    this._surveys.next(data as Survey[]);
+  }
+
+  /**
+   * Inserts a new survey record.  Tries a full payload first; if Supabase
+   * rejects it (e.g. missing columns), falls back to the minimal required
+   * fields (`title` and `questions` only).
+   *
+   * @param survey - Raw draft object from the creation form.
+   * @returns The inserted record and error state.
+   */
+  async addSurvey(survey: any): Promise<ServiceResult> {
+    const questions = this.mapQuestionsForInsert(survey.questions);
+    const payload = this.buildInsertPayload(survey, questions);
+    try {
+      const result = await this.tryInsert(payload);
+      if (!result.error) {
+        await this.fetchSurveys();
+        return result;
+      }
+      return await this.tryMinimalInsert(survey.title, questions);
+    } catch (e: any) {
+      console.warn('Network error in addSurvey:', e);
+      return { data: null, error: { message: e?.message ?? 'Network error' } };
+    }
+  }
+
+  /**
+   * Persists updated vote counts for all questions of a survey.
+   *
+   * @param id               - Supabase row ID of the survey.
+   * @param updatedQuestions - Full question array with refreshed vote counts.
+   */
+  async submitVote(id: number, updatedQuestions: any[]): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('polls')
+        .update({ questions: updatedQuestions })
+        .eq('id', id);
+      if (error) {
+        console.warn('Error submitting vote:', error.message);
+        return;
+      }
+      await this.fetchSurveys();
+    } catch (e) {
+      console.warn('Network error in submitVote:', e);
+    }
+  }
+
+  /**
+   * Subscribes to Postgres change events on the `polls` table and
+   * triggers a full re-fetch on any insert, update or delete.
+   */
+  private setupRealtime(): void {
+    this.supabase
+      .channel('polls-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => {
+        this.fetchSurveys();
+      })
+      .subscribe();
+  }
+
+  /**
+   * Updates internal flags based on column names present in the first row
+   * of the fetched dataset.
+   *
+   * @param data - Raw rows returned from Supabase.
+   */
+  private detectColumns(data: any[]): void {
+    if (data.length === 0) return;
+    const cols = Object.keys(data[0]);
+    this.columns = {
+      hasEndDate: cols.includes('end_date'),
+      hasDescription: cols.includes('description'),
+      hasCategory: cols.includes('category'),
+    };
+  }
+
+  /**
+   * Converts form question drafts into the Supabase question array format.
+   *
+   * @param questions - Question drafts from the form.
+   * @returns Mapped array ready for database insertion.
+   */
+  private mapQuestionsForInsert(questions: any[]) {
+    return questions.map((q: any) => ({
       question_text: q.questionText,
       allow_multiple: q.allowMultiple,
       options: q.options.map((o: any, i: number) => ({
@@ -64,73 +178,54 @@ export class SupabaseService {
         votes: 0,
       })),
     }));
-
-    // Basis-Payload — nur Spalten die garantiert existieren
-    const payload: any = {
-      title: survey.title,
-      questions,
-    };
-
-    // Optionale Spalten nur hinzufügen wenn sie existieren
-    if (this.hasDescription) payload.description = survey.description || '';
-    if (this.hasCategory) payload.category = survey.category;
-    if (this.hasEndDate) payload.end_date = survey.endDate || null;
-
-    console.log('INSERT payload:', payload);
-
-    try {
-      const { data, error } = await this.supabase.from('polls').insert([payload]).select();
-
-      if (error) {
-        console.warn('Supabase Insert-Fehler:', error.message);
-
-        // Fallback: Ohne optionale Felder nochmal versuchen
-        console.log('Versuche minimalen Insert (nur title + questions)...');
-        const { data: d2, error: e2 } = await this.supabase
-          .from('polls')
-          .insert([{ title: survey.title, questions }])
-          .select();
-
-        if (e2) {
-          console.warn('Minimaler Insert auch fehlgeschlagen:', e2.message);
-          return { data: null, error: e2 };
-        }
-
-        await this.fetchSurveys();
-        return { data: d2, error: null };
-      }
-
-      await this.fetchSurveys();
-      return { data, error: null };
-    } catch (e: any) {
-      console.warn('Netzwerkfehler bei addSurvey:', e);
-      return { data: null, error: { message: e?.message || 'Netzwerkfehler' } };
-    }
   }
 
-  async submitVote(id: number, updatedQuestions: any[]): Promise<void> {
-    try {
-      const { error } = await this.supabase
-        .from('polls')
-        .update({ questions: updatedQuestions })
-        .eq('id', id);
-
-      if (error) {
-        console.warn('Fehler beim Abstimmen:', error.message);
-      } else {
-        await this.fetchSurveys();
-      }
-    } catch (e) {
-      console.warn('Netzwerkfehler bei submitVote:', e);
-    }
+  /**
+   * Assembles the insert payload, conditionally including optional columns
+   * only when they are known to exist in the database.
+   *
+   * @param survey    - Raw survey draft.
+   * @param questions - Already-mapped question array.
+   * @returns Payload object for Supabase insertion.
+   */
+  private buildInsertPayload(survey: any, questions: any[]) {
+    const payload: any = { title: survey.title, questions };
+    if (this.columns.hasDescription) payload.description = survey.description || '';
+    if (this.columns.hasCategory) payload.category = survey.category;
+    if (this.columns.hasEndDate) payload.end_date = survey.endDate || null;
+    return payload;
   }
 
-  private setupRealtime(): void {
-    this.supabase
-      .channel('polls-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => {
-        this.fetchSurveys();
-      })
-      .subscribe();
+  /**
+   * Performs a Supabase insert and returns a normalised result.
+   *
+   * @param payload - Row data to insert.
+   * @returns Normalised {@link ServiceResult}.
+   */
+  private async tryInsert(payload: any): Promise<ServiceResult> {
+    const { data, error } = await this.supabase.from('polls').insert([payload]).select();
+    return { data: data ?? null, error: error ?? null };
+  }
+
+  /**
+   * Retries a failed insert using only the required `title` and `questions`
+   * columns.  Used as a fallback when optional columns are unavailable.
+   *
+   * @param title     - Survey title.
+   * @param questions - Mapped question array.
+   * @returns Normalised {@link ServiceResult}.
+   */
+  private async tryMinimalInsert(title: string, questions: any[]): Promise<ServiceResult> {
+    console.warn('Retrying with minimal payload (title + questions only)…');
+    const { data, error } = await this.supabase
+      .from('polls')
+      .insert([{ title, questions }])
+      .select();
+    if (error) {
+      console.warn('Minimal insert also failed:', error.message);
+      return { data: null, error };
+    }
+    await this.fetchSurveys();
+    return { data, error: null };
   }
 }
