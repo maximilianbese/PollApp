@@ -46,7 +46,7 @@ export function createEmptySurveyDraft(): NewSurveyDraft {
     title: '',
     description: '',
     endDate: '',
-    category: 'Team Activities',
+    category: 'Team activities',
     questions: [createEmptyQuestion()],
   };
 }
@@ -110,6 +110,13 @@ export function buildSurveyPayload(survey: NewSurveyDraft) {
  */
 export function validateSurveyDraft(survey: NewSurveyDraft): string | null {
   if (!survey.title.trim()) return 'Survey name is required.';
+
+  if (survey.endDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(survey.endDate);
+    if (end < today) return 'The end date cannot be in the past.';
+  }
 
   for (let qi = 0; qi < survey.questions.length; qi++) {
     const q = survey.questions[qi];

@@ -101,6 +101,11 @@ export class AppComponent implements OnInit {
   readonly getPercentage = getPercentage;
   readonly getLetterPrefix = getLetterPrefix;
 
+  /** Heutiges Datum als ISO-String (YYYY-MM-DD) für das min-Attribut des Date-Inputs. */
+  get todayString(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
   constructor(private supabaseService: SupabaseService) {}
 
   /**
@@ -115,16 +120,41 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Merges freshly fetched remote surveys with any still-pending local drafts.
+   * Merges freshly fetched remote surveys with local vote state.
+   * Surveys that have been voted on locally keep their local vote counts,
+   * so that votes are not lost when Supabase re-fetches.
    *
    * @param data - Latest survey array emitted by {@link SupabaseService.surveys$}.
    */
   private mergeRemoteSurveys(data: Survey[]): void {
     if (!Array.isArray(data)) return;
-    const onlyLocal = this._localSurveys
-      .getValue()
-      .filter((s: Survey) => typeof s.id === 'string' && s.id.startsWith('local-'));
-    this._localSurveys.next([...data, ...onlyLocal]);
+    const current = this._localSurveys.getValue();
+
+    // Merge: für jede Remote-Survey prüfen ob es eine lokale Version mit
+    // höherer Vote-Anzahl gibt → dann lokale Version bevorzugen
+    const merged = data.map((remote: Survey) => {
+      const local = current.find((s: Survey) => s.id === remote.id);
+      if (!local) return remote;
+      // Lokale Votes beibehalten wenn sie höher sind (User hat abgestimmt)
+      const remoteVotes = this.countTotalVotes(remote);
+      const localVotes = this.countTotalVotes(local);
+      return localVotes >= remoteVotes ? local : remote;
+    });
+
+    // Rein lokale Drafts (local-*) anhängen
+    const onlyLocal = current.filter(
+      (s: Survey) => typeof s.id === 'string' && s.id.startsWith('local-'),
+    );
+    this._localSurveys.next([...merged, ...onlyLocal]);
+  }
+
+  /** Zählt alle Stimmen einer Survey zusammen (Hilfsfunktion für Merge). */
+  private countTotalVotes(survey: Survey): number {
+    if (!survey?.questions) return 0;
+    return survey.questions.reduce((sum: number, q: any) => {
+      const qVotes = (q.options ?? []).reduce((s: number, o: any) => s + (o.votes ?? 0), 0);
+      return sum + qVotes;
+    }, 0);
   }
 
   // ── FILTER ────────────────────────────────────────────────────────────────
@@ -157,8 +187,11 @@ export class AppComponent implements OnInit {
    */
   selectSurvey(survey: Survey): void {
     if (isSurveyExpired(survey)) return;
+    // Stimmen aus dem lokalen Cache laden, damit abgegebene Votes erhalten bleiben
+    const cached = this._localSurveys.getValue().find((s: Survey) => s.id === survey.id);
+    const source = cached ?? survey;
     this.isCreating = false;
-    this.selectedSurvey = JSON.parse(JSON.stringify(survey));
+    this.selectedSurvey = JSON.parse(JSON.stringify(source));
     this.selectedOptions = {};
   }
 
@@ -260,6 +293,8 @@ export class AppComponent implements OnInit {
    */
   private persistSurvey(): void {
     const payload = buildSurveyPayload(this.newSurvey);
+    // Use the built payload (mapped to DB shape) when calling the service.
+    // If persistence fails, fall back to saving the same payload locally.
     this.resetAfterPublish();
     this.supabaseService
       .addSurvey(payload)

@@ -391,23 +391,8 @@ img {
   }
 }
 
-// ==========================================================================
-// CREATE SURVEY — Formular
-// ==========================================================================
-
-.create-survey-wrapper {
-  padding: 16px;
-
-  @include sm {
-    padding: 24px;
-  }
-  @include md {
-    padding: 32px 5%;
-  }
-  @include lg {
-    padding: 40px 10%;
-  }
-}
+// Create Survey Modal — responsive padding für die Karte selbst
+// ACHTUNG: .create-survey-wrapper ist position:fixed (Modal-Backdrop), kein Padding nötig!
 
 .create-survey-card {
   padding: 24px 20px;

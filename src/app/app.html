@@ -11,7 +11,7 @@
 </div>
 
 <!-- ===== DASHBOARD ===== -->
-<div class="dashboard-wrapper" *ngIf="!selectedSurvey && !isCreating">
+<div class="dashboard-wrapper" *ngIf="!selectedSurvey">
   <header class="hero-section">
     <div class="logo">
       <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
@@ -105,8 +105,8 @@
 </div>
 
 <!-- ===== UMFRAGE ERSTELLEN ===== -->
-<div class="create-survey-wrapper" *ngIf="isCreating">
-  <div class="create-survey-card">
+<div class="create-survey-wrapper" *ngIf="isCreating" (click)="cancelCreation()">
+  <div class="create-survey-card" (click)="$event.stopPropagation()">
     <div class="card-top-row">
       <div>
         <span class="badge-draft">Draft</span>
@@ -137,8 +137,11 @@
           <div class="row-inputs">
             <div class="sub-group">
               <label>Set end date <span class="optional-text">(optional)</span></label>
-              <input type="date" [(ngModel)]="newSurvey.endDate" />
+              <input type="date" [(ngModel)]="newSurvey.endDate" [min]="todayString" />
             </div>
+            <button class="icon-delete" (click)="newSurvey.endDate = ''">
+              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+            </button>
             <div class="category-select-wrapper">
               <button class="category-trigger" (click)="toggleCategoryDropdown()">
                 {{ newSurvey.category || 'Choose category' }}
@@ -155,10 +158,10 @@
                 </button>
               </div>
             </div>
+            <button class="icon-delete" (click)="newSurvey.category = ''">
+              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
+            </button>
           </div>
-          <button class="icon-delete" (click)="newSurvey.endDate = ''" style="bottom: 14px">
-            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-          </button>
         </div>
 
         <!-- US3: Fragen — Pflichtfelder mit * -->
