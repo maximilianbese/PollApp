@@ -212,7 +212,7 @@ export class SupabaseService {
     const payload: any = { title: survey.title, questions };
     if (this.columns.hasDescription) payload.description = survey.description || '';
     if (this.columns.hasCategory) payload.category = survey.category;
-    if (this.columns.hasEndDate) payload.end_date = survey.endDate || null;
+    if (this.columns.hasEndDate) payload.end_date = survey.end_date || survey.endDate || null;
     return payload;
   }
 

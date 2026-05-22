@@ -50,9 +50,9 @@
           <div class="card-bottom">
             <span
               class="badge-time"
-              [class.urgent]="getDaysRemaining(s.end_date).includes('days remaining')"
+              [class.urgent]="getDaysRemaining(s.end_date, s.created_at).includes('days remaining')"
             >
-              {{ getDaysRemaining(s.end_date) }}
+              {{ getDaysRemaining(s.end_date, s.created_at) }}
             </span>
           </div>
         </div>
@@ -85,7 +85,7 @@
           </div>
           <div class="item-meta">
             <span class="badge-time" [class.badge-expired]="isSurveyExpired(s)">
-              {{ getDaysRemaining(s.end_date) }}
+              {{ getDaysRemaining(s.end_date, s.created_at) }}
             </span>
             <span class="badge-closed" *ngIf="isSurveyExpired(s)">Closed</span>
           </div>
@@ -135,6 +135,9 @@
                 [(ngModel)]="newSurvey.endDate"
                 [min]="todayString"
               />
+              <div class="end-date-hint" *ngIf="newSurvey.endDate">
+                <small>{{ getDaysRemaining(newSurvey.endDate) }}</small>
+              </div>
             </div>
             <button class="icon-delete" (click)="newSurvey.endDate = ''">
               <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
@@ -262,7 +265,7 @@
       <div class="survey-header-card">
         <span class="badge-published">Published</span>
         <div class="meta-row">
-          <span>{{ getDaysRemaining(selectedSurvey.end_date) }}</span>
+          <span>{{ getDaysRemaining(selectedSurvey.end_date, selectedSurvey.created_at) }}</span>
           <span *ngIf="selectedSurvey.category">Category: {{ selectedSurvey.category }}</span>
         </div>
         <h2>{{ selectedSurvey.title }}</h2>

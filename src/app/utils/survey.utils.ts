@@ -63,28 +63,45 @@ export function getEndingSoonSurveys(surveys: Survey[]): Survey[] {
  * for surveys with no deadline.
  * @returns Localised label such as "3 days remaining" or "No end date".
  */
-export function getDaysRemaining(endDate: string | Date | undefined | null): string {
-  if (!endDate) return 'No end date';
+export function getDaysRemaining(
+  endDate: string | Date | undefined | null,
+  createdAt?: string | Date | undefined | null,
+): string {
+  // If an explicit end date exists, use it. Otherwise fall back to a
+  // default expiry window relative to the creation date (or today).
+  const DEFAULT_LIFETIME_DAYS = 30;
+
+  const parseLocalDate = (s: string) => {
+    const parts = s.split('-').map((v) => parseInt(v, 10));
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+
+  let end: Date | null = null;
+  if (endDate) {
+    // Normalize plain date strings (HTML date input) which are `YYYY-MM-DD`.
+    if (typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      end = parseLocalDate(endDate);
+    } else {
+      end = new Date(endDate as any);
+    }
+  } else if (createdAt) {
+    const created = new Date(createdAt);
+    end = new Date(created.getTime() + DEFAULT_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
+  } else {
+    // No dates available — assume default lifetime from today
+    end = new Date(Date.now() + DEFAULT_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
+  }
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Uhrzeit nullen für reinen Tagesvergleich
+  today.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
-  const end = new Date(endDate);
-  end.setHours(0, 0, 0, 0); // Uhrzeit für den Zieldatumstempel ebenfalls nullen
-
-  // Berechnung der reinen Tagesdifferenz über die Zeitstempel
   const diffTime = end.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) {
-    return 'Expired';
-  }
-  if (diffDays === 0) {
-    return 'Ends today';
-  }
-  if (diffDays === 1) {
-    return '1 day remaining';
-  }
+  if (diffDays < 0) return 'Expired';
+  if (diffDays === 0) return 'Ends today';
+  if (diffDays === 1) return '1 day remaining';
   return `${diffDays} days remaining`;
 }
 

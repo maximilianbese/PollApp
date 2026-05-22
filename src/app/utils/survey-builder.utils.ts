@@ -92,7 +92,17 @@ export function buildSurveyPayload(survey: NewSurveyDraft) {
     description: survey.description || '',
     category: survey.category,
     // Trimmst und fängst leere HTML-Input-Strings ab, damit sie sauber als NULL in der DB landen
-    end_date: survey.endDate && survey.endDate.trim() !== '' ? survey.endDate : null,
+    // Konvertiere `YYYY-MM-DD` (HTML date input) in eine vollständige ISO-Zeichenkette
+    end_date:
+      survey.endDate && survey.endDate.trim() !== ''
+        ? (() => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(survey.endDate)) {
+              const [y, m, d] = survey.endDate.split('-').map((v) => parseInt(v, 10));
+              return new Date(y, m - 1, d).toISOString();
+            }
+            return new Date(survey.endDate).toISOString();
+          })()
+        : null,
     questions: survey.questions.map(mapQuestion),
   };
 }

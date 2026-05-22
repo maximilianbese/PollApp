@@ -206,19 +206,22 @@ export class AppComponent implements OnInit {
 
   private persistSurvey(): void {
     const payload = buildSurveyPayload(this.newSurvey);
-
-    // 💡 RADIKALER FIX 3: Erzwinge die Zuweisung vor dem Absenden an Supabase
-    if (this.newSurvey.endDate) {
-      payload.end_date = this.newSurvey.endDate;
-    }
+    // `end_date` wird bereits in `buildSurveyPayload` in ISO konvertiert.
+    // Fügt eine lokale Vorschau hinzu, damit die UI sofort die verbleibenden Tage anzeigt.
+    const localId = this.saveLocally(payload);
 
     this.resetAfterPublish();
     this.supabaseService
       .addSurvey(payload)
       .then((r) => {
-        if (r?.error) this.saveLocally(payload);
+        // Wenn das Insert erfolgreich war, entferne die temporäre lokale Kopie.
+        if (!r?.error) {
+          this.removeLocalSurvey(localId);
+        }
       })
-      .catch(() => this.saveLocally(payload));
+      .catch(() => {
+        // Network error: leave the local preview in place so user can retry.
+      });
   }
 
   private resetAfterPublish(): void {
@@ -230,14 +233,28 @@ export class AppComponent implements OnInit {
     setTimeout(() => (this.showToast = false), 3000);
   }
 
-  private saveLocally(payload: any): void {
+  private saveLocally(payload: any): string {
+    // Ensure `end_date` stored locally is an ISO string when possible so
+    // the UI calculates remaining days correctly.
+    let endVal = payload.end_date || payload.endDate || null;
+    if (typeof endVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endVal)) {
+      const [y, m, d] = endVal.split('-').map((v: string) => parseInt(v, 10));
+      endVal = new Date(y, m - 1, d).toISOString();
+    }
+
     const local: Survey = {
       ...payload,
       id: 'local-' + Date.now(),
-      end_date: payload.end_date || payload.endDate || null,
+      end_date: endVal,
       created_at: new Date().toISOString(),
     };
     this._localSurveys.next([local, ...this._localSurveys.getValue()]);
+    return local.id as string;
+  }
+
+  private removeLocalSurvey(localId: string): void {
+    const updated = this._localSurveys.getValue().filter((s: Survey) => s.id !== localId);
+    this._localSurveys.next(updated);
   }
 
   registerVote(qi: number, oi: number, event: Event): void {
