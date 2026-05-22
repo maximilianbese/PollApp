@@ -91,7 +91,8 @@ export function buildSurveyPayload(survey: NewSurveyDraft) {
     title: survey.title,
     description: survey.description || '',
     category: survey.category,
-    end_date: survey.endDate || null,
+    // Trimmst und fängst leere HTML-Input-Strings ab, damit sie sauber als NULL in der DB landen
+    end_date: survey.endDate && survey.endDate.trim() !== '' ? survey.endDate : null,
     questions: survey.questions.map(mapQuestion),
   };
 }
@@ -111,10 +112,13 @@ export function buildSurveyPayload(survey: NewSurveyDraft) {
 export function validateSurveyDraft(survey: NewSurveyDraft): string | null {
   if (!survey.title.trim()) return 'Survey name is required.';
 
-  if (survey.endDate) {
+  if (survey.endDate && survey.endDate.trim() !== '') {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const end = new Date(survey.endDate);
+    end.setHours(0, 0, 0, 0); // 💡 FIX: Setzt auch das Zieldatum lokal auf Mitternacht, um Zeitzonensprünge auszugleichen
+
     if (end < today) return 'The end date cannot be in the past.';
   }
 

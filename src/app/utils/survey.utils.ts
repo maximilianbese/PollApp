@@ -1,7 +1,7 @@
 /**
  * @file survey.utils.ts
  * @description Pure helper functions for survey filtering, date calculations and
- * vote percentage computations.  All functions are side-effect-free.
+ * vote percentage computations. All functions are side-effect-free.
  */
 
 import { Survey, SurveyQuestion, SurveyOption } from '../models/surveys.models';
@@ -44,7 +44,7 @@ export function getPastSurveys(surveys: Survey[]): Survey[] {
 
 /**
  * Returns up to three active surveys sorted by their end date ascending
- * (soonest deadline first).  Surveys without an end date are excluded.
+ * (soonest deadline first). Surveys without an end date are excluded.
  *
  * @param surveys - Full survey list.
  * @returns Up to 3 surveys ending soonest.
@@ -59,18 +59,33 @@ export function getEndingSoonSurveys(surveys: Survey[]): Survey[] {
 /**
  * Produces a human-readable countdown string for a survey's end date.
  *
- * @param endDate - ISO date string.  Pass an empty string or undefined for
- *                  surveys with no deadline.
- * @returns Localised label such as "Ends in 3 days" or "No end date".
+ * @param endDate - ISO date string or Date object. Pass undefined/null/empty string
+ * for surveys with no deadline.
+ * @returns Localised label such as "3 days remaining" or "No end date".
  */
-export function getDaysRemaining(endDate: string | undefined): string {
+export function getDaysRemaining(endDate: string | Date | undefined | null): string {
   if (!endDate) return 'No end date';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Uhrzeit nullen für reinen Tagesvergleich
+
   const end = new Date(endDate);
-  const diff = Math.ceil((end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  if (diff < 0) return 'Ended ' + end.toLocaleDateString('de-DE');
-  if (diff === 0) return 'Ends today';
-  if (diff === 1) return 'Ends in 1 day';
-  return `Ends in ${diff} days`;
+  end.setHours(0, 0, 0, 0); // Uhrzeit für den Zieldatumstempel ebenfalls nullen
+
+  // Berechnung der reinen Tagesdifferenz über die Zeitstempel
+  const diffTime = end.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return 'Expired';
+  }
+  if (diffDays === 0) {
+    return 'Ends today';
+  }
+  if (diffDays === 1) {
+    return '1 day remaining';
+  }
+  return `${diffDays} days remaining`;
 }
 
 /**

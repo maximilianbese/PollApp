@@ -1,16 +1,13 @@
-<!-- ===== GLOBALER TOAST ===== -->
 <div class="publish-overlay" *ngIf="showToast">
   <span>✓ Your survey is now published</span>
   <button class="overlay-close" (click)="showToast = false">✕</button>
 </div>
 
-<!-- ===== FEHLERMELDUNG (global) ===== -->
 <div class="publish-overlay error-overlay" *ngIf="publishStatus === 'error'">
   <span>⚠️ {{ publishError }}</span>
   <button class="overlay-close" (click)="publishStatus = 'idle'">✕</button>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
 <div class="dashboard-wrapper" *ngIf="!selectedSurvey">
   <header class="hero-section">
     <div class="logo">
@@ -37,7 +34,6 @@
   <main class="surveys-container" *ngIf="surveys$ | async as surveys">
     <h2 class="main-title">Your surveys</h2>
 
-    <!-- US1: Ending soon — chronologisch sortiert, nur mit Enddatum -->
     <ng-container *ngIf="getEndingSoonSurveys(surveys).length > 0">
       <h3 class="section-subtitle">Ending soon</h3>
       <div class="ending-soon-grid">
@@ -52,13 +48,17 @@
             <p class="card-description">{{ s.description }}</p>
           </div>
           <div class="card-bottom">
-            <span class="badge-time urgent">{{ getDaysRemaining(s.end_date) }}</span>
+            <span
+              class="badge-time"
+              [class.urgent]="getDaysRemaining(s.end_date).includes('days remaining')"
+            >
+              {{ getDaysRemaining(s.end_date) }}
+            </span>
           </div>
         </div>
       </div>
     </ng-container>
 
-    <!-- US2: Filter Active / Past -->
     <div class="filter-bar">
       <div class="tabs">
         <button [class.active]="currentFilter === 'active'" (click)="setFilter('active')">
@@ -70,7 +70,6 @@
       </div>
     </div>
 
-    <!-- US2: Umfragenliste mit Titel, Beschreibung, Deadline -->
     <div class="surveys-grid">
       <ng-container *ngIf="getFilteredSurveys(surveys).length > 0; else emptyState">
         <div
@@ -82,15 +81,12 @@
           <div class="item-content">
             <span class="item-category">{{ s.category || 'General' }}</span>
             <h4>{{ s.title }}</h4>
-            <!-- US2: Kurzer Beschreibungstext -->
             <p class="item-description" *ngIf="s.description">{{ s.description }}</p>
           </div>
           <div class="item-meta">
-            <!-- US2: Deadline -->
             <span class="badge-time" [class.badge-expired]="isSurveyExpired(s)">
               {{ getDaysRemaining(s.end_date) }}
             </span>
-            <!-- US4: Hinweis für beendete Umfragen -->
             <span class="badge-closed" *ngIf="isSurveyExpired(s)">Closed</span>
           </div>
         </div>
@@ -104,7 +100,6 @@
   </main>
 </div>
 
-<!-- ===== UMFRAGE ERSTELLEN ===== -->
 <div class="create-survey-wrapper" *ngIf="isCreating" (click)="cancelCreation()">
   <div class="create-survey-card" (click)="$event.stopPropagation()">
     <div class="card-top-row">
@@ -116,9 +111,7 @@
     </div>
 
     <div class="form-split-layout">
-      <!-- LINKE SPALTE -->
       <div class="form-column">
-        <!-- US3: Pflichtfeld Titel — mit * gekennzeichnet -->
         <div class="form-group">
           <label>Survey name <span class="required-star">*</span></label>
           <input
@@ -132,12 +125,16 @@
           </button>
         </div>
 
-        <!-- Optional: Enddatum -->
         <div class="form-group">
           <div class="row-inputs">
             <div class="sub-group">
               <label>Set end date <span class="optional-text">(optional)</span></label>
-              <input type="date" [(ngModel)]="newSurvey.endDate" [min]="todayString" />
+              <input
+                type="date"
+                name="endDate"
+                [(ngModel)]="newSurvey.endDate"
+                [min]="todayString"
+              />
             </div>
             <button class="icon-delete" (click)="newSurvey.endDate = ''">
               <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
@@ -164,7 +161,6 @@
           </div>
         </div>
 
-        <!-- US3: Fragen — Pflichtfelder mit * -->
         <div
           class="question-builder-section"
           *ngFor="let question of newSurvey.questions; let qIdx = index"
@@ -222,11 +218,9 @@
           </button>
         </div>
 
-        <!-- Legende Pflichtfelder -->
         <p class="required-legend"><span class="required-star">*</span> Required fields</p>
       </div>
 
-      <!-- RECHTE SPALTE -->
       <div class="form-column">
         <div class="form-group">
           <label>Describing text <span class="optional-text">(optional)</span></label>
@@ -255,7 +249,6 @@
   </div>
 </div>
 
-<!-- ===== SINGLE SURVEY VIEW ===== -->
 <div class="single-survey-view" *ngIf="selectedSurvey">
   <div class="top-nav">
     <div class="logo" (click)="goBack()">
@@ -265,7 +258,6 @@
   </div>
 
   <div class="split-layout">
-    <!-- LINKS: Abstimmung -->
     <div class="survey-form-side">
       <div class="survey-header-card">
         <span class="badge-published">Published</span>
@@ -287,6 +279,11 @@
               <input
                 [type]="q.allow_multiple ? 'checkbox' : 'radio'"
                 [name]="'question-' + qIdx"
+                [checked]="
+                  q.allow_multiple
+                    ? opt.votes > 0
+                    : selectedOptions[selectedSurvey.id]?.[qIdx] === optIdx
+                "
                 (change)="registerVote(qIdx, optIdx, $event)"
               />
               <span class="option-text">
@@ -302,7 +299,6 @@
       </div>
     </div>
 
-    <!-- RECHTS: Live Ergebnisse (US5) -->
     <div class="survey-results-side">
       <h3>Survey results <span class="live-indicator">LIVE</span></h3>
 
@@ -311,7 +307,6 @@
         <p class="no-results-subtext">There are no answers yet.</p>
       </ng-container>
 
-      <!-- US5: Ergebnisse aktualisieren sich dynamisch -->
       <ng-container *ngIf="getTotalVotesForSurvey(selectedSurvey) > 0">
         <div class="result-block" *ngFor="let q of selectedSurvey.questions; let qIdx = index">
           <h4>{{ qIdx + 1 }}. {{ q.question_text }}</h4>
