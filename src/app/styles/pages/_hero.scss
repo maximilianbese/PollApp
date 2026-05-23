@@ -3,6 +3,10 @@
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
 
+  .hero-inner {
+    @include content-max-width;
+  }
+
   .hero-content {
     display: flex;
     justify-content: space-between;

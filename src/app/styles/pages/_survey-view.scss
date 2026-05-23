@@ -6,11 +6,16 @@
 
 .top-nav {
   background-color: $card-white;
-  padding: 20px 5%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-bottom: 1px solid #ecddd4;
+  padding: 20px 0;
+
+  .top-nav-inner {
+    @include content-max-width;
+    padding: 0 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
   .logo {
     display: flex;
@@ -37,6 +42,10 @@
       background-color: darken($accent-orange, 8%);
     }
   }
+}
+
+.survey-view-inner {
+  @include content-max-width;
 }
 
 .split-layout {
@@ -249,8 +258,9 @@
     height: 100%;
     background-color: $accent-orange;
     border-radius: 6px;
-    transition: width 0.5s ease;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 0;
+    will-change: width;
   }
 
   .percentage-label {
@@ -260,10 +270,6 @@
     min-width: 36px;
     text-align: right;
   }
-}
-
-.vote-count {
-  display: none;
 }
 
 .total-votes {

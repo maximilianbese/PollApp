@@ -1,51 +1,55 @@
 <div class="single-survey-view">
   <div class="top-nav">
-    <div class="logo" (click)="backClicked.emit()">
-      <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
+    <div class="top-nav-inner">
+      <div class="logo" (click)="backClicked.emit()">
+        <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
+      </div>
+      <button class="btn-create-nav" (click)="createClicked.emit()">Create survey</button>
     </div>
-    <button class="btn-create-nav" (click)="createClicked.emit()">Create survey</button>
   </div>
 
-  <div class="split-layout">
-    <div class="survey-form-side">
-      <div class="survey-header-card">
-        <span class="badge-published">Published</span>
-        <div class="meta-row">
-          <span>{{ daysLabel }}</span>
-          <span *ngIf="survey.category">Category: {{ survey.category }}</span>
+  <div class="survey-view-inner">
+    <div class="split-layout">
+      <div class="survey-form-side">
+        <div class="survey-header-card">
+          <span class="badge-published">Published</span>
+          <div class="meta-row">
+            <span>{{ daysLabel }}</span>
+            <span *ngIf="survey.category">Category: {{ survey.category }}</span>
+          </div>
+          <h2>{{ survey.title }}</h2>
+          <p *ngIf="survey.description">{{ survey.description }}</p>
         </div>
-        <h2>{{ survey.title }}</h2>
-        <p *ngIf="survey.description">{{ survey.description }}</p>
-      </div>
 
-      <div class="questions-form-grid">
-        <div class="question-block" *ngFor="let q of survey.questions; let qIdx = index">
-          <h3>{{ qIdx + 1 }}. {{ q.question_text }}</h3>
-          <p class="sub-info" *ngIf="q.allow_multiple">More than one answer is possible.</p>
+        <div class="questions-form-grid">
+          <div class="question-block" *ngFor="let q of survey.questions; let qIdx = index">
+            <h3>{{ qIdx + 1 }}. {{ q.question_text }}</h3>
+            <p class="sub-info" *ngIf="q.allow_multiple">More than one answer is possible.</p>
 
-          <div class="options-vertical">
-            <label class="checkbox-option" *ngFor="let opt of q.options; let optIdx = index">
-              <input
-                [type]="q.allow_multiple ? 'checkbox' : 'radio'"
-                [name]="'question-' + qIdx"
-                [checked]="isChecked(qIdx, optIdx)"
-                (change)="
-                  voteRegistered.emit({ questionIndex: qIdx, optionIndex: optIdx, event: $event })
-                "
-              />
-              <span class="option-text">
-                <strong>{{ opt.letter }}.</strong> {{ opt.text }}
-              </span>
-            </label>
+            <div class="options-vertical">
+              <label class="checkbox-option" *ngFor="let opt of q.options; let optIdx = index">
+                <input
+                  [type]="q.allow_multiple ? 'checkbox' : 'radio'"
+                  [name]="'question-' + qIdx"
+                  [checked]="isChecked(qIdx, optIdx)"
+                  (change)="
+                    voteRegistered.emit({ questionIndex: qIdx, optionIndex: optIdx, event: $event })
+                  "
+                />
+                <span class="option-text">
+                  <strong>{{ opt.letter }}.</strong> {{ opt.text }}
+                </span>
+              </label>
+            </div>
           </div>
         </div>
+
+        <div class="form-actions">
+          <button class="btn-complete" (click)="completed.emit()">Complete survey</button>
+        </div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn-complete" (click)="completed.emit()">Complete survey</button>
-      </div>
+      <app-survey-results [survey]="survey" />
     </div>
-
-    <app-survey-results [survey]="survey" />
   </div>
 </div>

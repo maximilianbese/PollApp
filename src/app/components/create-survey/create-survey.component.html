@@ -130,9 +130,16 @@
           </button>
         </div>
 
-        <button class="btn-secondary-action" (click)="addQuestion()">
+        <button
+          class="btn-secondary-action"
+          (click)="addQuestion()"
+          [disabled]="!canAddQuestion"
+          [class.btn-disabled]="!canAddQuestion"
+          [title]="!canAddQuestion ? 'Maximum of 3 questions reached' : ''"
+        >
           Add next question <span>+</span>
         </button>
+        <p class="question-limit-hint" *ngIf="!canAddQuestion">Maximum of 3 questions reached.</p>
       </div>
     </div>
 

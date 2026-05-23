@@ -5,8 +5,8 @@
   min-height: 100vh;
 }
 
-.body {
-  background-color: $bg-hero-purple;
+.dashboard-inner {
+  @include content-max-width;
 }
 
 .logo-img {

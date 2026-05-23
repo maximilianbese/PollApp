@@ -411,3 +411,18 @@ input[type='date'] {
     color: #4ade80;
   }
 }
+
+.btn-disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+
+  &:hover {
+    background-color: inherit;
+  }
+}
+
+.question-limit-hint {
+  font-size: 12px;
+  color: #9a8a9e;
+  margin: 4px 0 0 0;
+}
