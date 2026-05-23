@@ -80,7 +80,6 @@ img {
       gap: 40px;
       margin-top: 48px;
     }
-
     @include lg {
       gap: 50px;
       margin-top: 60px;
@@ -118,7 +117,6 @@ img {
   .hero-illustration {
     display: flex;
     justify-content: center;
-
     @include md {
       flex: 0 0 auto;
     }
@@ -127,7 +125,6 @@ img {
   .hero-img {
     width: 100%;
     max-width: 280px;
-
     @include sm {
       max-width: 320px;
     }
@@ -148,7 +145,6 @@ img {
     padding: 14px 28px;
     font-size: 18px;
   }
-
   img {
     height: 18px;
     @include md {
@@ -164,7 +160,6 @@ img {
 .logo-img {
   width: 90px;
   height: auto;
-
   @include sm {
     width: 100px;
   }
@@ -174,12 +169,11 @@ img {
 }
 
 // ==========================================================================
-// SURVEYS CONTAINER — Hauptliste
+// SURVEYS CONTAINER
 // ==========================================================================
 
 .surveys-container {
   padding: 32px 16px;
-
   @include sm {
     padding: 40px 20px;
   }
@@ -221,7 +215,7 @@ img {
 }
 
 // ==========================================================================
-// ENDING SOON GRID — oben
+// ENDING SOON GRID
 // ==========================================================================
 
 .ending-soon-grid {
@@ -233,13 +227,11 @@ img {
   @include sm {
     gap: 18px;
   }
-
   @include md {
     grid-template-columns: repeat(3, 1fr);
     gap: 22px;
     margin-bottom: 48px;
   }
-
   @include lg {
     gap: 30px;
     margin-bottom: 60px;
@@ -273,7 +265,6 @@ img {
         font-size: 14px;
       }
     }
-
     h4 {
       font-size: clamp(14px, 3.5vw, 20px);
       margin: 10px 0 auto;
@@ -314,7 +305,6 @@ img {
     button {
       font-size: clamp(13px, 3vw, 16px);
       padding: 8px 16px;
-
       @include md {
         font-size: 16px;
         padding: 10px 24px;
@@ -324,7 +314,7 @@ img {
 }
 
 // ==========================================================================
-// SURVEYS GRID — untere Liste
+// SURVEYS GRID
 // ==========================================================================
 
 .surveys-grid {
@@ -364,7 +354,6 @@ img {
         font-size: 14px;
       }
     }
-
     h4 {
       font-size: clamp(14px, 3.5vw, 18px);
       @include md {
@@ -377,25 +366,21 @@ img {
   }
 }
 
-// ==========================================================================
-// BADGE
-// ==========================================================================
-
 .badge-time {
   font-size: 11px;
   padding: 5px 10px;
-
   @include md {
     font-size: 12px;
     padding: 6px 14px;
   }
 }
 
-// Create Survey Modal — responsive padding für die Karte selbst
-// ACHTUNG: .create-survey-wrapper ist position:fixed (Modal-Backdrop), kein Padding nötig!
+// ==========================================================================
+// CREATE SURVEY MODAL
+// ==========================================================================
 
 .create-survey-card {
-  padding: 24px 20px;
+  padding: 24px 16px;
   border-radius: 20px 48px 20px 20px;
 
   @include sm {
@@ -415,7 +400,6 @@ img {
     flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 20px;
-
     @include md {
       margin-bottom: 28px;
     }
@@ -442,6 +426,21 @@ img {
     font-size: 13px;
     padding: 8px 14px;
 
+    @media (max-width: 495px) {
+      padding: 8px;
+      font-size: 0;
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      &::before {
+        content: '✕';
+        font-size: 18px;
+        line-height: 1;
+      }
+    }
     @include md {
       font-size: 14px;
       padding: 10px 18px;
@@ -453,8 +452,8 @@ img {
   }
 }
 
-// Form-Layout: mobile = single column, desktop = 2 columns
 .form-split-layout {
+  display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
 
@@ -462,195 +461,264 @@ img {
     grid-template-columns: 1.1fr 0.9fr;
     gap: 32px;
   }
-
   @include lg {
     gap: 40px;
   }
 }
 
 .form-column {
-  gap: 18px;
-
-  @include md {
-    gap: 22px;
-  }
-  @include lg {
-    gap: 24px;
-  }
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
 }
 
-// Form group
+// Hauptgruppe der Inputs
 .form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  gap: 8px !important;
+  position: relative !important;
+
   label {
-    font-size: 13px;
-    @include md {
-      font-size: 15px;
-    }
-    @include lg {
-      font-size: 16px;
-    }
-  }
-
-  input[type='text'],
-  textarea {
     font-size: 14px;
-    padding: 12px 40px 12px 14px;
-    border-radius: 10px;
-
+    font-weight: 600;
+    display: block;
     @include md {
       font-size: 15px;
-      padding: 13px 45px 13px 16px;
-      border-radius: 12px;
     }
     @include lg {
       font-size: 16px;
-      padding: 14px 45px 14px 16px;
-      border-radius: 14px;
     }
   }
 
-  textarea {
-    height: 100px;
-    border-radius: 10px 32px 10px 10px;
-
-    @include md {
-      height: 115px;
-      border-radius: 12px 36px 12px 12px;
+  // --- SURVEY NAME X-BUTTON ---
+  > button.icon-delete {
+    @include xs {
+      display: none !important; // Blendet das X bei "Survey name" unter 480px aus
     }
-    @include lg {
-      height: 130px;
-      border-radius: 14px 40px 14px 14px;
-    }
-  }
-
-  .row-inputs {
-    flex-direction: column;
-    gap: 14px;
-
     @include sm {
-      flex-direction: row;
-      align-items: flex-end;
-      gap: 16px;
-    }
-    @include lg {
-      gap: 20px;
-    }
-  }
-}
-
-// Icon-Delete-Button (Mülleimer)
-// Mobil: ins Input-Feld einrücken, damit es nicht aus der Card rausragt
-.icon-delete {
-  right: 10px;
-  bottom: 12px;
-
-  img {
-    width: 16px;
-    height: 16px;
-  }
-
-  // Ab Desktop: originale Position außerhalb des Inputs
-  @include md {
-    right: -28px;
-    bottom: 14px;
-
-    img {
-      width: 17px;
-      height: 17px;
+      position: absolute !important;
+      right: 0 !important;
+      top: 0 !important;
+      margin: 0 !important;
     }
   }
 
-  @include lg {
-    right: -30px;
-
-    img {
-      width: 18px;
-      height: 18px;
-    }
-  }
-}
-
-// Damit das Icon sichtbar bleibt, braucht das Input-Feld rechts Platz
-.form-group {
   input[type='text'],
   input[type='date'],
   textarea {
-    // Mobil: rechts Platz für das Icon lassen
-    padding-right: 40px;
+    font-size: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
 
     @include md {
-      // Desktop: Icon ist außerhalb, normales Padding
-      padding-right: 16px;
+      font-size: 15px;
+    }
+    @include lg {
+      font-size: 16px;
+    }
+  }
+
+  textarea {
+    height: 120px;
+    border-radius: 12px 32px 12px 12px;
+  }
+
+  // --- DESCRIBING TEXT X-BUTTON ---
+  > textarea + .icon-delete {
+    // BLEIBT AUCH AUF MOBILE ERKANNBAR EINBLENDET
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+  }
+
+  // ==========================================================================
+  // ROW INPUTS CONTAINER (Datum & Kategorie)
+  // ==========================================================================
+  .row-inputs {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+
+    @include sm {
+      flex-direction: row !important;
+      align-items: flex-end;
+      gap: 16px !important;
+    }
+
+    .sub-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+
+    // --- SET END DATE X-BUTTON ---
+    > button.icon-delete:nth-of-type(1) {
+      @include xs {
+        display: none !important; // Blendet das X bei "Set end date" unter 480px aus
+      }
+      @include sm {
+        display: inline-flex !important;
+        order: 2 !important;
+      }
+    }
+
+    // --- CHOOSE CATEGORY X-BUTTON ---
+    > button.icon-delete:nth-of-type(2) {
+      @include xs {
+        display: none !important; // Blendet das X bei "Choose category" unter 480px aus
+      }
+      @include sm {
+        display: inline-flex !important;
+        order: 4 !important;
+      }
+    }
+
+    .category-select-wrapper {
+      display: block !important;
+      width: 100% !important;
+      margin-top: 4px !important;
+
+      @include sm {
+        margin-top: 0 !important;
+        order: 3 !important;
+      }
     }
   }
 }
 
-// Question Builder
+// Grundstyling für Lösch-Icons
+.icon-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  padding: 4px;
+
+  img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Optisches Label für die Kategorie erzeugen
+.category-select-wrapper {
+  position: relative;
+  width: 100% !important;
+
+  &::before {
+    content: 'Choose category';
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: inherit;
+    margin-bottom: 8px;
+    @include md {
+      font-size: 15px;
+    }
+  }
+
+  .category-trigger {
+    font-size: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box !important;
+  }
+}
+
+// ==========================================================================
+// QUESTION BUILDER & ANTWORTZEILEN (Bleiben immer sichtbar)
+// ==========================================================================
 .question-builder-section {
   padding-top: 18px;
-
   @include md {
     padding-top: 22px;
   }
-  @include lg {
-    padding-top: 24px;
-  }
 
-  .question-title-row h3 {
-    font-size: 15px;
-    @include md {
-      font-size: 17px;
+  .question-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    position: relative;
+
+    h3 {
+      font-size: 15px;
+      margin: 0;
     }
-    @include lg {
-      font-size: 18px;
+
+    // BLEIBT AUCH AUF MOBILE AKTIV: X für Question
+    .icon-delete {
+      position: absolute !important;
+      right: 0 !important;
+      top: 0 !important;
     }
   }
 
   .answers-heading-row {
-    margin: 18px 0 12px;
-
-    @include md {
-      margin: 22px 0 14px;
-    }
-    @include lg {
-      margin: 24px 0 16px;
-    }
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0 12px;
     h4 {
       font-size: 15px;
-      @include md {
-        font-size: 17px;
-      }
-      @include lg {
-        font-size: 18px;
-      }
+      margin: 0;
     }
   }
 
   .checkbox-label {
     font-size: 13px;
-    @include md {
-      font-size: 14px;
-    }
   }
 
+  // BLEIBT AUCH AUF MOBILE AKTIV: X für alle Answers (A, B...)
   .answer-input-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
     margin-bottom: 12px;
-
-    @include md {
-      margin-bottom: 14px;
-    }
-    @include lg {
-      margin-bottom: 16px;
-    }
+    width: 100%;
 
     .prefix {
       font-size: 15px;
-      @include md {
-        font-size: 17px;
+      font-weight: bold;
+      display: inline-block;
+      min-width: 16px;
+    }
+
+    .form-group {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 10px !important;
+
+      input[type='text'] {
+        flex: 1 !important;
+        width: auto !important;
       }
-      @include lg {
-        font-size: 18px;
+
+      .icon-delete {
+        position: static !important;
+        margin: 0 !important;
       }
     }
   }
@@ -658,426 +726,77 @@ img {
 
 .btn-text-action {
   font-size: 14px;
-  @include md {
-    font-size: 15px;
-  }
-  @include lg {
-    font-size: 16px;
-  }
 }
-
 .btn-secondary-action {
   font-size: 13px;
   padding: 10px 18px;
-
-  @include md {
-    font-size: 15px;
-    padding: 12px 22px;
-  }
-  @include lg {
-    font-size: 16px;
-    padding: 12px 24px;
-  }
 }
 
 .card-footer-actions {
-  margin-top: 16px;
+  margin-top: 24px;
+  display: flex;
   justify-content: center;
-
   @include md {
     justify-content: flex-end;
-    margin-top: 20px;
   }
 
   .btn-publish {
     width: 100%;
     font-size: 15px;
-    padding: 13px;
-
+    padding: 14px;
     @include sm {
       width: auto;
-    }
-    @include md {
-      font-size: 16px;
-      padding: 14px 28px;
-    }
-    @include lg {
-      font-size: 18px;
       padding: 14px 36px;
     }
-  }
-}
-
-// Category Dropdown
-.category-select-wrapper {
-  .category-trigger {
-    font-size: 14px;
-    padding: 12px 14px;
-    border-radius: 10px;
-
-    @include md {
-      font-size: 15px;
-      padding: 14px 16px;
-      border-radius: 14px;
-    }
-  }
-
-  .category-option {
-    font-size: 14px;
-    padding: 11px 16px;
-
-    @include md {
-      font-size: 15px;
-      padding: 13px 18px;
-    }
-  }
-}
-
-// Date input
-input[type='date'] {
-  font-size: 14px;
-  padding: 12px 14px;
-  border-radius: 10px;
-
-  @include md {
-    font-size: 15px;
-    padding: 14px 16px;
-    border-radius: 14px;
   }
 }
 
 // ==========================================================================
 // SINGLE SURVEY VIEW
 // ==========================================================================
-
 .top-nav {
   padding: 14px 16px;
-
   @include sm {
     padding: 16px 20px;
   }
   @include md {
     padding: 20px 5%;
   }
-
-  .btn-create-nav {
-    font-size: 13px;
-    padding: 10px 16px;
-    border-radius: 10px;
-
-    @include md {
-      font-size: 15px;
-      padding: 12px 24px;
-      border-radius: 12px;
-    }
-  }
 }
 
-// Split-Layout: mobil untereinander, Desktop nebeneinander
 .split-layout {
   grid-template-columns: 1fr;
-  min-height: unset;
-
   @include md {
     grid-template-columns: 1fr 1fr;
-    min-height: calc(100vh - 80px);
   }
 }
 
-// Linke Seite
 .survey-form-side {
-  padding: 28px 16px 40px;
-  gap: 24px;
-  border-right: none;
-  border-bottom: 1px solid #ecddd4;
-
-  @include sm {
-    padding: 32px 20px 40px;
-  }
-
-  @include md {
-    padding: 40px 4% 40px 5%;
-    gap: 28px;
-    border-right: 1px solid #ecddd4;
-    border-bottom: none;
-  }
-
-  @include lg {
-    padding: 50px 5%;
-    gap: 32px;
-  }
-}
-
-.survey-header-card {
-  .badge-published {
-    font-size: 12px;
-    padding: 4px 12px;
-
-    @include md {
-      font-size: 13px;
-      padding: 5px 14px;
-    }
-  }
-
-  .meta-row {
-    font-size: 12px;
-    gap: 14px;
-    margin-bottom: 12px;
-
-    @include md {
-      font-size: 13px;
-      gap: 24px;
-      margin-bottom: 14px;
-    }
-  }
-
-  h2 {
-    font-size: clamp(28px, 8vw, 44px);
-    margin-bottom: 12px;
-
-    @include md {
-      font-size: clamp(36px, 5.5vw, 50px);
-      margin-bottom: 14px;
-    }
-    @include lg {
-      font-size: 52px;
-      margin-bottom: 16px;
-    }
-  }
-
-  p {
-    font-size: 13px;
-    @include md {
-      font-size: 14px;
-    }
-  }
-}
-
-// Fragen-Grid: mobil 1-spaltig, Desktop 2-spaltig
-.questions-form-grid {
-  grid-template-columns: 1fr;
-  gap: 20px;
-
-  @include md {
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  @include lg {
-    gap: 32px;
-  }
-}
-
-.question-block {
-  h3 {
-    font-size: 13px;
-    @include md {
-      font-size: 14px;
-    }
-    @include lg {
-      font-size: 15px;
-    }
-  }
-
-  .sub-info {
-    font-size: 11px;
-    @include md {
-      font-size: 12px;
-    }
-  }
-}
-
-.options-vertical {
-  gap: 8px;
-  @include md {
-    gap: 10px;
-  }
-}
-
-.checkbox-option {
-  .option-text {
-    font-size: 13px;
-    @include md {
-      font-size: 14px;
-    }
-  }
-}
-
-.form-actions {
-  .btn-complete {
-    width: 100%;
-    font-size: 14px;
-    padding: 13px 28px;
-    text-align: center;
-
-    @include sm {
-      width: auto;
-    }
-    @include md {
-      font-size: 16px;
-      padding: 14px 36px;
-    }
-  }
-}
-
-// Rechte Seite — Ergebnisse
-.survey-results-side {
   padding: 28px 16px;
-  gap: 20px;
-
-  @include sm {
-    padding: 32px 20px;
-  }
   @include md {
-    padding: 40px 4% 40px 4%;
-    gap: 28px;
-  }
-  @include lg {
-    padding: 50px 5%;
-    gap: 32px;
-  }
-
-  h3 {
-    font-size: 18px;
-    @include md {
-      font-size: 20px;
-    }
-    @include lg {
-      font-size: 22px;
-    }
+    padding: 40px 5%;
   }
 }
-
-.result-block {
-  h4 {
-    font-size: 13px;
-    @include md {
-      font-size: 14px;
-    }
-    @include lg {
-      font-size: 15px;
-    }
-  }
-}
-
-.result-bars-container {
-  gap: 6px;
-  @include md {
-    gap: 8px;
-  }
-}
-
-.result-bar-row {
-  gap: 8px;
-
-  @include md {
-    gap: 10px;
-  }
-
-  .letter-label {
-    font-size: 12px;
-    @include md {
-      font-size: 13px;
-    }
-  }
-
-  .bar-wrapper {
-    height: 12px;
-    @include md {
-      height: 14px;
-    }
-  }
-
-  .percentage-label {
-    font-size: 12px;
-    min-width: 30px;
-
-    @include md {
-      font-size: 13px;
-      min-width: 36px;
-    }
-  }
-}
-
-// ==========================================================================
-// TOAST / OVERLAY
-// ==========================================================================
-
-.publish-overlay {
-  left: 50%;
-  width: calc(100% - 32px);
-  max-width: 480px;
-  bottom: 20px;
-  padding: 14px 20px;
-  font-size: 14px;
-  border-radius: 12px;
-  transform: translateX(-50%);
-
-  @include md {
-    width: auto;
-    bottom: 32px;
-    padding: 16px 28px;
-    font-size: 15px;
-    border-radius: 14px;
-  }
-  @include lg {
-    bottom: 40px;
-    padding: 18px 32px;
-    font-size: 16px;
-  }
-}
-
-// ==========================================================================
-// SMALL TOUCH TARGETS
-// ==========================================================================
 
 @include xs {
-  // Sicherstellen dass alle Buttons mindestens 44px Tipp-Fläche haben
   .btn-primary,
   .btn-cancel,
   .btn-secondary-action,
   .btn-publish,
-  .btn-complete,
-  .btn-create-nav,
-  .tabs button {
+  .tabs button,
+  input,
+  textarea,
+  .category-trigger {
     min-height: 44px;
   }
 }
 
-// ==========================================================================
-// UTILITY: Verstecken bei Breakpoints
-// ==========================================================================
-
-// Hero-Illustration nur ab 480px zeigen (unter 480px zu wenig Platz)
 .hero-illustration {
   @include xs {
     display: none;
   }
 }
-
-// Badge-Draft responsiv
 .badge-draft {
   font-size: 12px;
   padding: 5px 12px;
-
-  @include md {
-    font-size: 14px;
-    padding: 6px 14px;
-  }
-}
-
-// ==========================================================================
-// SCROLLBAR (WebKit)
-// ==========================================================================
-
-::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
 }

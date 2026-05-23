@@ -28,7 +28,16 @@ export function isSurveyExpired(survey: Survey): boolean {
  * @returns Surveys that have not yet expired.
  */
 export function getActiveSurveys(surveys: Survey[]): Survey[] {
-  return surveys.filter((s) => !isSurveyExpired(s));
+  return surveys
+    .filter((s) => !isSurveyExpired(s))
+    .sort((a, b) => {
+      const aEnd = a.end_date ? new Date(a.end_date).getTime() : Number.POSITIVE_INFINITY;
+      const bEnd = b.end_date ? new Date(b.end_date).getTime() : Number.POSITIVE_INFINITY;
+      if (aEnd === bEnd) {
+        return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
+      }
+      return aEnd - bEnd;
+    });
 }
 
 /**

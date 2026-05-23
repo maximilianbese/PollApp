@@ -1,0 +1,274 @@
+// ==========================================================================
+// RESPONSIVE STYLES — Poll App
+// Mobile-first, min-width: 320px
+// Breakpoints: 320px | 480px | 768px | 1024px | 1280px
+// ==========================================================================
+
+html,
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.dashboard-wrapper {
+  overflow-x: hidden;
+}
+
+.hero-section {
+  padding: 24px 16px 48px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+
+  @include sm {
+    padding: 32px 24px 56px;
+  }
+  @include md {
+    padding: 40px 5% 64px;
+  }
+  @include lg {
+    padding: 40px 10% 80px;
+  }
+
+  .hero-content {
+    flex-direction: column;
+    gap: 32px;
+    margin-top: 32px;
+
+    @include md {
+      flex-direction: row;
+      align-items: center;
+      gap: 40px;
+      margin-top: 48px;
+    }
+    @include lg {
+      gap: 50px;
+      margin-top: 60px;
+    }
+  }
+
+  .hero-text {
+    h1 {
+      font-size: clamp(36px, 10vw, 72px);
+      margin-bottom: 16px;
+
+      @include md {
+        font-size: clamp(56px, 7vw, 90px);
+      }
+      @include lg {
+        font-size: 100px;
+      }
+    }
+
+    p {
+      font-size: clamp(15px, 3.5vw, 20px);
+      margin-bottom: 28px;
+
+      @include md {
+        font-size: 20px;
+        margin-bottom: 36px;
+      }
+      @include lg {
+        font-size: 24px;
+        margin-bottom: 40px;
+      }
+    }
+  }
+
+  .hero-illustration {
+    display: flex;
+    justify-content: center;
+
+    @include md {
+      flex: 0 0 auto;
+    }
+  }
+
+  .hero-img {
+    width: 100%;
+    max-width: 280px;
+
+    @include sm {
+      max-width: 320px;
+    }
+    @include md {
+      max-width: 360px;
+    }
+    @include lg {
+      max-width: 420px;
+    }
+  }
+}
+
+.btn-primary {
+  font-size: clamp(14px, 3.5vw, 18px);
+  padding: 12px 22px;
+
+  @include md {
+    padding: 14px 28px;
+    font-size: 18px;
+  }
+
+  img {
+    height: 18px;
+
+    @include md {
+      height: 20px;
+    }
+  }
+}
+
+.logo-img {
+  width: 90px;
+  height: auto;
+
+  @include sm {
+    width: 100px;
+  }
+  @include md {
+    width: 120px;
+  }
+}
+
+.surveys-container {
+  padding: 32px 16px;
+
+  @include sm {
+    padding: 40px 20px;
+  }
+  @include md {
+    padding: 48px 5%;
+  }
+  @include lg {
+    padding: 60px 10%;
+  }
+
+  .main-title {
+    font-size: clamp(40px, 12vw, 64px);
+    margin: 24px 0;
+    text-align: center;
+
+    @include md {
+      font-size: clamp(56px, 8vw, 80px);
+      margin: 32px 0 40px;
+    }
+    @include lg {
+      font-size: 80px;
+      margin: 40px 0;
+    }
+  }
+
+  .section-subtitle {
+    font-size: clamp(18px, 4.5vw, 24px);
+    margin-bottom: 20px;
+
+    @include md {
+      font-size: 24px;
+      margin-bottom: 28px;
+    }
+    @include lg {
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+  }
+}
+
+.ending-soon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 36px;
+
+  @include sm {
+    gap: 18px;
+  }
+  @include md {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-bottom: 48px;
+  }
+  @include lg {
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .ending-card {
+    padding: 20px;
+    min-height: 160px;
+    border-radius: 16px 48px 16px 16px;
+
+    @include sm {
+      padding: 24px;
+      min-height: 180px;
+      border-radius: 18px 60px 18px 18px;
+    }
+    @include md {
+      padding: 28px;
+      height: 200px;
+      border-radius: 20px 70px 20px 20px;
+    }
+    @include lg {
+      padding: 35px;
+      height: 240px;
+      border-radius: 20px 80px 20px 20px;
+    }
+  }
+}
+
+.filter-bar {
+  flex-wrap: wrap;
+
+  .tabs {
+    gap: 10px;
+  }
+}
+
+.surveys-grid {
+  grid-template-columns: 1fr;
+
+  @include sm {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.form-split-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+
+  @include lg {
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 40px;
+  }
+}
+
+.question-builder-section {
+  .answer-input-row {
+    flex-direction: column;
+
+    @include md {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+}
+
+.survey-results-side {
+  padding: 32px 5%;
+
+  @include md {
+    padding: 50px 5%;
+  }
+}
+
+.result-bar-row {
+  flex-wrap: wrap;
+
+  .bar-wrapper {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,274 @@
+.single-survey-view {
+  background-color: $card-white;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+.top-nav {
+  background-color: $card-white;
+  padding: 20px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ecddd4;
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-dark;
+    cursor: pointer;
+  }
+
+  .btn-create-nav {
+    background-color: $accent-orange;
+    color: $text-dark;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background-color: darken($accent-orange, 8%);
+    }
+  }
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: calc(100vh - 80px);
+}
+
+.survey-form-side {
+  padding: 50px 5% 50px 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  border-right: 1px solid #ecddd4;
+}
+
+.survey-header-card {
+  background-color: $card-white;
+
+  .badge-published {
+    background-color: #ffdcb8;
+    color: #c46812;
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: #8a758d;
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-family: 'Nerko One', sans-serif;
+    font-size: 52px;
+    font-weight: 400;
+    color: $accent-orange;
+    margin: 0 0 16px 0;
+    line-height: 1.1;
+  }
+
+  p {
+    font-size: 14px;
+    color: #5a4d60;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+.questions-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.question-block {
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+  }
+
+  .sub-info {
+    font-size: 12px;
+    color: #9a8a9e;
+    margin: 0 0 14px 0;
+  }
+}
+
+.options-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 16px;
+    height: 16px;
+    accent-color: $accent-orange;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .custom-box {
+    display: none;
+  }
+
+  .option-text {
+    font-size: 14px;
+    color: $text-dark;
+
+    strong {
+      margin-right: 4px;
+    }
+  }
+}
+
+.form-actions {
+  margin-top: auto;
+
+  .btn-complete {
+    background-color: $accent-orange;
+    color: $text-dark;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background-color: darken($accent-orange, 8%);
+    }
+  }
+}
+
+.survey-results-side {
+  padding: 50px 5%;
+  background-color: #fdf6f0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+
+  h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.live-indicator {
+  background-color: $accent-orange;
+  color: $text-dark;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+}
+
+.no-results-text {
+  color: #9a8a9e;
+  font-size: 14px;
+  margin: 0;
+}
+
+.result-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+  }
+}
+
+.result-bars-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .letter-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: $text-dark;
+    width: 18px;
+    flex-shrink: 0;
+  }
+
+  .bar-wrapper {
+    flex: 1;
+    background-color: #ecddd4;
+    border-radius: 6px;
+    height: 14px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background-color: $accent-orange;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    min-width: 0;
+  }
+
+  .percentage-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: $text-dark;
+    min-width: 36px;
+    text-align: right;
+  }
+}
+
+.vote-count {
+  display: none;
+}
+
+.total-votes {
+  font-size: 12px;
+  color: #9a8a9e;
+  text-align: right;
+  margin: 4px 0 0 0;
+}

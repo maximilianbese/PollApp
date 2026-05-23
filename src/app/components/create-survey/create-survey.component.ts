@@ -7,7 +7,6 @@ import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NewSurveyDraft, PublishStatus } from '../../models/surveys.models';
 import { getLetterPrefix, createEmptyQuestion } from '../../utils/survey-builder.utils';
-import { getDaysRemaining } from '../../utils/survey.utils';
 
 /**
  * Full-screen modal overlay for composing a new survey.
@@ -17,11 +16,11 @@ import { getDaysRemaining } from '../../utils/survey.utils';
  * @example
  * ```html
  * <app-create-survey
- *   [draft]="newSurvey"
- *   [publishStatus]="status"
- *   [publishError]="error"
- *   (cancelled)="cancel()"
- *   (published)="publish()"
+ * [draft]="newSurvey"
+ * [publishStatus]="status"
+ * [publishError]="error"
+ * (cancelled)="cancel()"
+ * (published)="publish()"
  * />
  * ```
  */
@@ -64,11 +63,6 @@ export class CreateSurveyComponent {
   /** Today's date in `YYYY-MM-DD` format, used as the `min` for the date input. */
   get todayString(): string {
     return new Date().toISOString().split('T')[0];
-  }
-
-  /** Returns the human-readable end-date hint shown below the date input. */
-  endDateHint(): string {
-    return getDaysRemaining(this.draft.endDate);
   }
 
   /** Exposes the letter-prefix utility to the template. */

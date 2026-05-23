@@ -1,0 +1,128 @@
+.hero-section {
+  padding: 40px 10% 80px 10%;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+
+  .hero-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 60px;
+    gap: 50px;
+  }
+
+  .hero-text {
+    flex: 1;
+
+    h1 {
+      font-family: 'Nerko One', sans-serif;
+      font-size: 100px;
+      font-weight: 400;
+      color: $accent-orange;
+      margin: 0 0 24px 0;
+      line-height: 1.1;
+    }
+
+    p {
+      font-size: 24px;
+      line-height: 1.6;
+      color: #ffffff;
+      margin-bottom: 40px;
+      max-width: 520px;
+    }
+  }
+}
+
+.mock-phone {
+  position: relative;
+  width: 200px;
+  height: 340px;
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  transform: rotate(6deg);
+
+  .phone-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .line-short,
+    .line-long {
+      background: #eadecf;
+      border-radius: 5px;
+    }
+
+    .line-short {
+      width: 40%;
+      height: 10px;
+    }
+
+    .line-long {
+      width: 85%;
+      height: 10px;
+      margin-bottom: 20px;
+    }
+
+    .box-empty {
+      width: 100%;
+      height: 75px;
+      background: #f7f1e8;
+      border-radius: 14px;
+    }
+
+    .box-checked {
+      width: 100%;
+      height: 55px;
+      background: $accent-orange;
+      border-radius: 14px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  }
+
+  .decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    .star {
+      position: absolute;
+      left: -40px;
+      bottom: 40px;
+      font-size: 2.2rem;
+      color: #765779;
+      transform: rotate(-15deg);
+    }
+
+    .bubble {
+      position: absolute;
+      right: -25px;
+      top: 20px;
+      background: $accent-orange;
+      color: $text-dark;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.3rem;
+    }
+  }
+}
+
+.hero-img {
+  max-width: 420px;
+  width: 100%;
+}

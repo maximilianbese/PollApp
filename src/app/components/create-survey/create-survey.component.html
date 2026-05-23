@@ -28,9 +28,6 @@
             <div class="sub-group">
               <label>Set end date <span class="optional-text">(optional)</span></label>
               <input type="date" name="endDate" [(ngModel)]="draft.endDate" [min]="todayString" />
-              <div class="end-date-hint" *ngIf="draft.endDate">
-                <small>{{ endDateHint() }}</small>
-              </div>
             </div>
             <button class="icon-delete" (click)="draft.endDate = ''">
               <img src="/add_circle.svg" alt="Clear" style="transform: rotate(45deg)" />

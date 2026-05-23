@@ -1,0 +1,131 @@
+.btn-primary {
+  background-color: #ffcfa1;
+  color: #2c202d;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    background-color 0.3s,
+    transform 0.3s,
+    padding 0.3s;
+
+  img {
+    max-width: 0;
+    opacity: 0;
+    height: 20px;
+    margin-left: 0;
+    display: block;
+    transition:
+      max-width 0.3s ease,
+      opacity 0.2s ease,
+      margin-left 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    background-color: #ffb87a;
+
+    img {
+      max-width: 20px;
+      opacity: 1;
+      margin-left: 12px;
+    }
+  }
+}
+
+.btn-text-action {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.btn-secondary-action {
+  background-color: #5a465d;
+  color: #ffebd9;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: #6d5570;
+  }
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.btn-cancel {
+  background-color: #514154;
+  color: #ffebd9;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: #635067;
+  }
+}
+
+.card-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+
+  .btn-publish {
+    background-color: #ffebd9;
+    color: $text-dark;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background-color: #ffdfc4;
+    }
+  }
+}
+
+.btn-publish:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
