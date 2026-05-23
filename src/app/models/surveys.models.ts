@@ -1,21 +1,25 @@
 /**
- * @file survey.models.ts
- * @description Shared TypeScript interfaces for surveys, questions and answer options.
+ * @fileoverview Domain models for the Poll App.
+ * All interfaces represent data shapes flowing between the UI, local state, and Supabase.
  */
 
-/** Represents a single answer option within a question. */
+/**
+ * A single answer option within a poll question.
+ */
 export interface SurveyOption {
-  /** Display letter prefix (e.g. "A", "B"). */
+  /** Display letter prefix (e.g. `"A"`, `"B"`). */
   letter: string;
-  /** The visible answer text. */
+  /** Visible answer text. */
   text: string;
   /** Accumulated vote count for this option. */
   votes: number;
 }
 
-/** Represents a single question with its answer options. */
+/**
+ * A single question belonging to a survey, including its answer options.
+ */
 export interface SurveyQuestion {
-  /** The question body text. */
+  /** Body text of the question. */
   question_text: string;
   /** Whether voters may select more than one answer. */
   allow_multiple: boolean;
@@ -23,9 +27,12 @@ export interface SurveyQuestion {
   options: SurveyOption[];
 }
 
-/** Represents a persisted survey record returned from Supabase. */
+/**
+ * A persisted survey record as returned from Supabase.
+ * The `id` is prefixed with `"local-"` for optimistically saved drafts.
+ */
 export interface Survey {
-  /** Unique identifier – prefixed with `"local-"` for optimistically saved drafts. */
+  /** Unique identifier. */
   id: number | string;
   /** Survey headline. */
   title: string;
@@ -42,37 +49,56 @@ export interface Survey {
 }
 
 /**
- * Draft shape used during survey creation before it is mapped to
- * the Supabase payload format.
+ * Transient draft shape used during survey creation,
+ * before being mapped to the Supabase insert payload.
  */
 export interface NewSurveyDraft {
   title: string;
   description: string;
+  /** Date string in `YYYY-MM-DD` format, as produced by an HTML date input. */
   endDate: string;
   category: string;
   questions: NewQuestionDraft[];
 }
 
-/** Draft shape of a question while building a new survey. */
+/**
+ * Transient draft shape for a question while building a new survey.
+ */
 export interface NewQuestionDraft {
   questionText: string;
   allowMultiple: boolean;
   options: NewOptionDraft[];
 }
 
-/** Draft shape of an answer option while building a new survey. */
+/**
+ * Transient draft shape for an answer option while building a new survey.
+ */
 export interface NewOptionDraft {
   label: string;
   votes: number;
 }
 
 /**
- * Possible publish-flow states used to drive UI feedback.
- * - `idle`    – nothing happening
+ * Publish-flow states used to drive UI feedback.
+ *
+ * - `idle`    – no action in progress
  * - `loading` – async save in progress
  * - `error`   – validation or network failure
  */
 export type PublishStatus = 'idle' | 'loading' | 'error';
 
-/** Filter tab options shown on the dashboard. */
+/**
+ * Filter tab options available on the survey dashboard.
+ */
 export type SurveyFilter = 'active' | 'past';
+
+/**
+ * Per-survey, per-question vote tracking stored in local storage.
+ * Single-choice questions store the selected option index; multi-choice
+ * questions store a map of option index → checked state.
+ */
+export type SelectedOptionsMap = {
+  [surveyId: string | number]: {
+    [questionIndex: number]: number | { [optionIndex: number]: boolean };
+  };
+};

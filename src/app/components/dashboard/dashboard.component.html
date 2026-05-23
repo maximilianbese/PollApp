@@ -1,0 +1,53 @@
+<div class="dashboard-wrapper">
+  <header class="hero-section">
+    <div class="logo">
+      <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
+    </div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>Collect Feedback, Unlock Ideas</h1>
+        <p>
+          Create and share surveys in minutes – from team events to workplace culture. Collect
+          opinions, engage your audience, and turn feedback into action.
+        </p>
+        <button class="btn-primary" (click)="createClicked.emit()">
+          New survey
+          <img src="/add_circle.svg" alt="add" />
+        </button>
+      </div>
+      <div class="hero-illustration">
+        <img src="/phone-img.svg" alt="Poll App Overview" class="hero-img" />
+      </div>
+    </div>
+  </header>
+
+  <main class="surveys-container">
+    <h2 class="main-title">Your surveys</h2>
+
+    <ng-container *ngIf="endingSoon.length > 0">
+      <h3 class="section-subtitle">Ending soon</h3>
+      <div class="ending-soon-grid">
+        <app-ending-soon-card
+          *ngFor="let s of endingSoon"
+          [survey]="s"
+          (selected)="surveySelected.emit($event)"
+        />
+      </div>
+    </ng-container>
+
+    <app-filter-bar [currentFilter]="currentFilter" (filterChange)="filterChanged.emit($event)" />
+
+    <div class="surveys-grid">
+      <ng-container *ngIf="filteredSurveys.length > 0; else emptyState">
+        <app-survey-card
+          *ngFor="let s of filteredSurveys"
+          [survey]="s"
+          (selected)="surveySelected.emit($event)"
+        />
+      </ng-container>
+      <ng-template #emptyState>
+        <p class="empty-state">{{ emptyStateMessage }}</p>
+      </ng-template>
+    </div>
+  </main>
+</div>

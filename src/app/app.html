@@ -1,335 +1,41 @@
-<div class="publish-overlay" *ngIf="showToast">
-  <span>✓ Your survey is now published</span>
-  <button class="overlay-close" (click)="showToast = false">✕</button>
-</div>
+<app-toast
+  *ngIf="showToast"
+  message="Your survey is now published"
+  [isError]="false"
+  (dismissed)="showToast = false"
+/>
 
-<div class="publish-overlay error-overlay" *ngIf="publishStatus === 'error'">
-  <span>⚠️ {{ publishError }}</span>
-  <button class="overlay-close" (click)="publishStatus = 'idle'">✕</button>
-</div>
+<app-toast
+  *ngIf="showErrorToast && publishStatus === 'error'"
+  [message]="publishError"
+  [isError]="true"
+  (dismissed)="showErrorToast = false; publishStatus = 'idle'"
+/>
 
-<div class="dashboard-wrapper" *ngIf="!selectedSurvey">
-  <header class="hero-section">
-    <div class="logo">
-      <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
-    </div>
-    <div class="hero-content">
-      <div class="hero-text">
-        <h1>Collect Feedback, Unlock Ideas</h1>
-        <p>
-          Create and share surveys in minutes – from team events to workplace culture. Collect
-          opinions, engage your audience, and turn feedback into action.
-        </p>
-        <button class="btn-primary" (click)="openCreateMode()">
-          New survey
-          <img src="/add_circle.svg" alt="add" />
-        </button>
-      </div>
-      <div class="hero-illustration">
-        <img src="/phone-img.svg" alt="Poll App Overview" class="hero-img" />
-      </div>
-    </div>
-  </header>
+<app-dashboard
+  *ngIf="!selectedSurvey && !isCreating"
+  [surveys]="(surveys$ | async) ?? []"
+  [currentFilter]="currentFilter"
+  (filterChanged)="setFilter($event)"
+  (surveySelected)="selectSurvey($event)"
+  (createClicked)="openCreateMode()"
+/>
 
-  <main class="surveys-container" *ngIf="surveys$ | async as surveys">
-    <h2 class="main-title">Your surveys</h2>
+<app-create-survey
+  *ngIf="isCreating"
+  [draft]="newSurvey"
+  [publishStatus]="publishStatus"
+  [publishError]="publishError"
+  (cancelled)="cancelCreation()"
+  (published)="publishSurvey()"
+/>
 
-    <ng-container *ngIf="getEndingSoonSurveys(surveys).length > 0">
-      <h3 class="section-subtitle">Ending soon</h3>
-      <div class="ending-soon-grid">
-        <div
-          class="ending-card"
-          *ngFor="let s of getEndingSoonSurveys(surveys)"
-          (click)="selectSurvey(s)"
-        >
-          <div class="card-top">
-            <span class="card-category">{{ s.category || 'General' }}</span>
-            <h4>{{ s.title }}</h4>
-            <p class="card-description">{{ s.description }}</p>
-          </div>
-          <div class="card-bottom">
-            <span
-              class="badge-time"
-              [class.urgent]="getDaysRemaining(s.end_date, s.created_at).includes('days remaining')"
-            >
-              {{ getDaysRemaining(s.end_date, s.created_at) }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <div class="filter-bar">
-      <div class="tabs">
-        <button [class.active]="currentFilter === 'active'" (click)="setFilter('active')">
-          Active surveys
-        </button>
-        <button [class.active]="currentFilter === 'past'" (click)="setFilter('past')">
-          Past surveys
-        </button>
-      </div>
-    </div>
-
-    <div class="surveys-grid">
-      <ng-container *ngIf="getFilteredSurveys(surveys).length > 0; else emptyState">
-        <div
-          class="survey-list-item"
-          *ngFor="let s of getFilteredSurveys(surveys)"
-          [class.expired]="isSurveyExpired(s)"
-          (click)="selectSurvey(s)"
-        >
-          <div class="item-content">
-            <span class="item-category">{{ s.category || 'General' }}</span>
-            <h4>{{ s.title }}</h4>
-            <p class="item-description" *ngIf="s.description">{{ s.description }}</p>
-          </div>
-          <div class="item-meta">
-            <span class="badge-time" [class.badge-expired]="isSurveyExpired(s)">
-              {{ getDaysRemaining(s.end_date, s.created_at) }}
-            </span>
-            <span class="badge-closed" *ngIf="isSurveyExpired(s)">Closed</span>
-          </div>
-        </div>
-      </ng-container>
-      <ng-template #emptyState>
-        <p class="empty-state">
-          {{ currentFilter === 'past' ? 'No past surveys yet.' : 'No active surveys yet.' }}
-        </p>
-      </ng-template>
-    </div>
-  </main>
-</div>
-
-<div class="create-survey-wrapper" *ngIf="isCreating" (click)="cancelCreation()">
-  <div class="create-survey-card" (click)="$event.stopPropagation()">
-    <div class="card-top-row">
-      <div>
-        <span class="badge-draft">Draft</span>
-        <h2>Create new survey</h2>
-      </div>
-      <button class="btn-cancel" (click)="cancelCreation()">Cancel <span>✕</span></button>
-    </div>
-
-    <div class="form-split-layout">
-      <div class="form-column">
-        <div class="form-group">
-          <label>Survey name <span class="required-star">*</span></label>
-          <input
-            type="text"
-            [(ngModel)]="newSurvey.title"
-            placeholder="e.g. Let's Plan the Next Team Event Together"
-            [class.input-error]="publishStatus === 'error' && !newSurvey.title.trim()"
-          />
-          <button class="icon-delete" (click)="newSurvey.title = ''">
-            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-          </button>
-        </div>
-
-        <div class="form-group">
-          <div class="row-inputs">
-            <div class="sub-group">
-              <label>Set end date <span class="optional-text">(optional)</span></label>
-              <input
-                type="date"
-                name="endDate"
-                [(ngModel)]="newSurvey.endDate"
-                [min]="todayString"
-              />
-              <div class="end-date-hint" *ngIf="newSurvey.endDate">
-                <small>{{ getDaysRemaining(newSurvey.endDate) }}</small>
-              </div>
-            </div>
-            <button class="icon-delete" (click)="newSurvey.endDate = ''">
-              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-            </button>
-            <div class="category-select-wrapper">
-              <button class="category-trigger" (click)="toggleCategoryDropdown()">
-                {{ newSurvey.category || 'Choose category' }}
-                <span>{{ categoryDropdownOpen ? '▲' : '▼' }}</span>
-              </button>
-              <div class="category-dropdown" *ngIf="categoryDropdownOpen">
-                <button
-                  class="category-option"
-                  *ngFor="let cat of categories"
-                  [class.selected]="newSurvey.category === cat"
-                  (click)="selectCategory(cat)"
-                >
-                  {{ cat }}
-                </button>
-              </div>
-            </div>
-            <button class="icon-delete" (click)="newSurvey.category = ''">
-              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          class="question-builder-section"
-          *ngFor="let question of newSurvey.questions; let qIdx = index"
-        >
-          <div class="question-title-row">
-            <h3>{{ qIdx + 1 }}. Question <span class="required-star">*</span></h3>
-            <button
-              class="icon-delete"
-              *ngIf="newSurvey.questions.length > 1"
-              (click)="removeQuestion(qIdx)"
-            >
-              <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-            </button>
-          </div>
-
-          <div class="form-group">
-            <input
-              type="text"
-              [(ngModel)]="question.questionText"
-              placeholder="Enter your question here..."
-              [class.input-error]="publishStatus === 'error' && !question.questionText.trim()"
-            />
-          </div>
-
-          <div class="answers-heading-row">
-            <h4>Answers <span class="required-star">*</span></h4>
-            <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="question.allowMultiple" />
-              Allow multiple answers.
-            </label>
-          </div>
-
-          <div class="answer-input-row" *ngFor="let option of question.options; let oIdx = index">
-            <span class="prefix">{{ getLetterPrefix(oIdx) }}</span>
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="option.label"
-                placeholder="Option text..."
-                [class.input-error]="publishStatus === 'error' && !option.label.trim()"
-              />
-              <button
-                class="icon-delete"
-                (click)="removeAnswerOption(qIdx, oIdx)"
-                [style.opacity]="question.options.length <= 2 ? '0.3' : '1'"
-                [style.cursor]="question.options.length <= 2 ? 'not-allowed' : 'pointer'"
-              >
-                <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-              </button>
-            </div>
-          </div>
-
-          <button class="btn-text-action" (click)="addAnswerOption(qIdx)">
-            <span>+</span> Add answer
-          </button>
-        </div>
-
-        <p class="required-legend"><span class="required-star">*</span> Required fields</p>
-      </div>
-
-      <div class="form-column">
-        <div class="form-group">
-          <label>Describing text <span class="optional-text">(optional)</span></label>
-          <textarea
-            [(ngModel)]="newSurvey.description"
-            placeholder="Optional descriptions go here..."
-          ></textarea>
-          <button
-            class="icon-delete"
-            (click)="newSurvey.description = ''"
-            style="bottom: auto; top: 45px"
-          >
-            <img src="/add_circle.svg" alt="Delete" style="transform: rotate(45deg)" />
-          </button>
-        </div>
-
-        <button class="btn-secondary-action" (click)="addNextQuestion()">
-          Add next question <span>+</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="card-footer-actions">
-      <button class="btn-publish" (click)="publishSurvey()">Publish</button>
-    </div>
-  </div>
-</div>
-
-<div class="single-survey-view" *ngIf="selectedSurvey">
-  <div class="top-nav">
-    <div class="logo" (click)="goBack()">
-      <img src="/pollApp-logo.svg" alt="Poll App Logo" class="logo-img" />
-    </div>
-    <button class="btn-create-nav" (click)="openCreateMode()">Create survey</button>
-  </div>
-
-  <div class="split-layout">
-    <div class="survey-form-side">
-      <div class="survey-header-card">
-        <span class="badge-published">Published</span>
-        <div class="meta-row">
-          <span>{{ getDaysRemaining(selectedSurvey.end_date, selectedSurvey.created_at) }}</span>
-          <span *ngIf="selectedSurvey.category">Category: {{ selectedSurvey.category }}</span>
-        </div>
-        <h2>{{ selectedSurvey.title }}</h2>
-        <p *ngIf="selectedSurvey.description">{{ selectedSurvey.description }}</p>
-      </div>
-
-      <div class="questions-form-grid">
-        <div class="question-block" *ngFor="let q of selectedSurvey.questions; let qIdx = index">
-          <h3>{{ qIdx + 1 }}. {{ q.question_text }}</h3>
-          <p class="sub-info" *ngIf="q.allow_multiple">More than one answer is possible.</p>
-
-          <div class="options-vertical">
-            <label class="checkbox-option" *ngFor="let opt of q.options; let optIdx = index">
-              <input
-                [type]="q.allow_multiple ? 'checkbox' : 'radio'"
-                [name]="'question-' + qIdx"
-                [checked]="
-                  q.allow_multiple
-                    ? opt.votes > 0
-                    : selectedOptions[selectedSurvey.id]?.[qIdx] === optIdx
-                "
-                (change)="registerVote(qIdx, optIdx, $event)"
-              />
-              <span class="option-text">
-                <strong>{{ opt.letter }}.</strong> {{ opt.text }}
-              </span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button class="btn-complete" (click)="goBack()">Complete survey</button>
-      </div>
-    </div>
-
-    <div class="survey-results-side">
-      <h3>Survey results <span class="live-indicator">LIVE</span></h3>
-
-      <ng-container *ngIf="getTotalVotesForSurvey(selectedSurvey) === 0">
-        <p class="no-results-text">Results will be shown here after the first vote.</p>
-        <p class="no-results-subtext">There are no answers yet.</p>
-      </ng-container>
-
-      <ng-container *ngIf="getTotalVotesForSurvey(selectedSurvey) > 0">
-        <div class="result-block" *ngFor="let q of selectedSurvey.questions; let qIdx = index">
-          <h4>{{ qIdx + 1 }}. {{ q.question_text }}</h4>
-          <div class="result-bars-container">
-            <div class="result-bar-row" *ngFor="let opt of q.options">
-              <span class="letter-label">{{ opt.letter }}</span>
-              <div class="bar-wrapper">
-                <div
-                  class="bar-fill"
-                  [style.width.%]="getPercentage(opt.votes, getQuestionTotal(q))"
-                ></div>
-              </div>
-              <span class="percentage-label">
-                {{ getPercentage(opt.votes, getQuestionTotal(q)) }}%
-              </span>
-            </div>
-          </div>
-          <p class="total-votes">Total: {{ getQuestionTotal(q) }} votes</p>
-        </div>
-      </ng-container>
-    </div>
-  </div>
-</div>
+<app-survey-detail
+  *ngIf="selectedSurvey"
+  [survey]="selectedSurvey"
+  [selectedOptions]="selectedOptions"
+  (voteRegistered)="registerVote($event.questionIndex, $event.optionIndex, $event.event)"
+  (completed)="goBack()"
+  (createClicked)="openCreateMode()"
+  (backClicked)="goBack()"
+/>

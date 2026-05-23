@@ -1,168 +1,200 @@
 /**
- * @file app.ts
- * @description Root Angular component for the Poll App.
+ * @fileoverview Root application component.
+ * Orchestrates top-level navigation between the dashboard, the survey creation
+ * modal, and the single-survey detail view. Owns all reactive state and
+ * delegates persistence to {@link SupabaseService}.
  */
 
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { Observable, BehaviorSubject } from 'rxjs';
 
-import { SupabaseService } from './services/supabase';
-import { Survey, NewSurveyDraft, PublishStatus, SurveyFilter } from './models/surveys.models';
+import { SupabaseService } from './services/supabase.service';
 import {
-  isSurveyExpired,
-  getActiveSurveys,
-  getPastSurveys,
-  getEndingSoonSurveys,
-  getDaysRemaining,
-  getQuestionTotal,
-  getTotalVotesForSurvey,
-  getPercentage,
-} from './utils/survey.utils';
+  Survey,
+  NewSurveyDraft,
+  PublishStatus,
+  SurveyFilter,
+  SelectedOptionsMap,
+} from './models/surveys.models';
 import {
   createEmptySurveyDraft,
-  createEmptyQuestion,
-  getLetterPrefix,
   buildSurveyPayload,
   validateSurveyDraft,
 } from './utils/survey-builder.utils';
 
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { CreateSurveyComponent } from './components/create-survey/create-survey.component';
+import { SurveyDetailComponent } from './components/survey-detail/survey-detail.component';
+import { ToastComponent } from './components/toast/toast.component';
+
+/** @internal Key used to persist vote selections in `localStorage`. */
+const VOTES_STORAGE_KEY = 'poll_app_user_votes';
+
+/**
+ * Shell component that manages view state and delegates rendering to
+ * specialised child components.
+ *
+ * **View hierarchy:**
+ * - {@link DashboardComponent} — default view showing all surveys
+ * - {@link CreateSurveyComponent} — modal overlay for new surveys
+ * - {@link SurveyDetailComponent} — full-page voting form for one survey
+ * - {@link ToastComponent} — transient success / error banners
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    AsyncPipe,
+    NgIf,
+    DashboardComponent,
+    CreateSurveyComponent,
+    SurveyDetailComponent,
+    ToastComponent,
+  ],
   templateUrl: './app.html',
   styleUrls: ['./app.scss'],
   encapsulation: ViewEncapsulation.None,
 })
 export class AppComponent implements OnInit {
-  private _localSurveys = new BehaviorSubject<Survey[]>([]);
+  private readonly _localSurveys = new BehaviorSubject<Survey[]>([]);
+
+  /** Observable survey list consumed by child components via the async pipe. */
   surveys$!: Observable<Survey[]>;
 
+  /** Survey currently open in the detail view, or `null` when not selected. */
   selectedSurvey: Survey | null = null;
+
+  /** Active dashboard filter tab. */
   currentFilter: SurveyFilter = 'active';
-  isCreating: boolean = false;
+
+  /** Whether the survey creation modal is visible. */
+  isCreating = false;
+
+  /** Mutable draft bound to the creation form. */
   newSurvey: NewSurveyDraft = createEmptySurveyDraft();
+
+  /** Publish-flow state used to drive toast and error UI. */
   publishStatus: PublishStatus = 'idle';
-  publishError: string = '';
-  showToast: boolean = false;
 
-  selectedOptions: {
-    [surveyId: string | number]: {
-      [qi: number]: number | { [oi: number]: boolean };
-    };
-  } = {};
+  /** Error message shown when {@link publishStatus} is `"error"`. */
+  publishError = '';
 
-  categoryDropdownOpen: boolean = false;
-  readonly categories: string[] = [
-    'Team Activities',
-    'Health & Wellness',
-    'Gaming & Entertainment',
-    'Education & Learning',
-    'Lifestyle & Preferences',
-    'Technology & Innovation',
-  ];
+  /** Whether the success toast is visible. */
+  showToast = false;
 
-  readonly isSurveyExpired = isSurveyExpired;
-  readonly getActiveSurveys = getActiveSurveys;
-  readonly getPastSurveys = getPastSurveys;
-  readonly getEndingSoonSurveys = getEndingSoonSurveys;
-  readonly getDaysRemaining = getDaysRemaining;
-  readonly getQuestionTotal = getQuestionTotal;
-  readonly getTotalVotesForSurvey = getTotalVotesForSurvey;
-  readonly getPercentage = getPercentage;
-  readonly getLetterPrefix = getLetterPrefix;
+  /** Whether the error toast (from validation) is visible. */
+  showErrorToast = false;
 
-  get todayString(): string {
-    return new Date().toISOString().split('T')[0];
-  }
+  /**
+   * Stores the user's vote selections keyed by survey ID and question index.
+   * Persisted to `localStorage` on every change.
+   */
+  selectedOptions: SelectedOptionsMap = {};
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   ngOnInit(): void {
     this.surveys$ = this._localSurveys.asObservable();
+
     this.supabaseService.surveys$.subscribe({
-      next: (data: any[]) => {
-        // 💡 RADIKALER FIX 1: Jedes reinkommende Datenbankobjekt wird hier knallhart normalisiert
-        const normalized = (data || []).map((s) => ({
-          ...s,
-          end_date: s.end_date || s.endDate || null,
-        }));
+      next: (data) => {
+        const normalized = (data ?? []).map((s) => {
+          const fallbackEndDate = (s as unknown as { endDate?: string }).endDate;
+          return {
+            ...s,
+            end_date: s.end_date ?? fallbackEndDate ?? null,
+          };
+        }) as Survey[];
         this.mergeRemoteSurveys(normalized);
       },
     });
 
     try {
-      const savedVotes = localStorage.getItem('poll_app_user_votes');
-      if (savedVotes) {
-        this.selectedOptions = JSON.parse(savedVotes);
-      }
-    } catch (e) {
-      console.error('Konnte Auswahlen nicht aus LocalStorage laden', e);
+      const saved = localStorage.getItem(VOTES_STORAGE_KEY);
+      if (saved) this.selectedOptions = JSON.parse(saved);
+    } catch {
+      /* Silently ignore corrupted storage entries. */
     }
   }
 
-  private mergeRemoteSurveys(data: Survey[]): void {
-    if (!Array.isArray(data)) return;
+  /**
+   * Merges remote survey data into the local stream, preferring whichever
+   * version has more votes to protect against stale overwrites.
+   *
+   * @param remoteData - Latest survey array from Supabase.
+   */
+  private mergeRemoteSurveys(remoteData: Survey[]): void {
+    if (!Array.isArray(remoteData)) return;
     const current = this._localSurveys.getValue();
 
-    const merged = data.map((remote: Survey) => {
-      const local = current.find((s: Survey) => s.id === remote.id);
+    const merged = remoteData.map((remote) => {
+      const local = current.find((s) => s.id === remote.id);
       if (!local) return remote;
-      const remoteVotes = this.countTotalVotes(remote);
-      const localVotes = this.countTotalVotes(local);
-      return localVotes >= remoteVotes ? local : remote;
+      return this.countTotalVotes(local) >= this.countTotalVotes(remote) ? local : remote;
     });
 
-    const onlyLocal = current.filter(
-      (s: Survey) => typeof s.id === 'string' && s.id.startsWith('local-'),
-    );
+    const onlyLocal = current.filter((s) => typeof s.id === 'string' && s.id.startsWith('local-'));
     this._localSurveys.next([...merged, ...onlyLocal]);
   }
 
+  /**
+   * Counts all votes across every question and option of a survey.
+   *
+   * @param survey - Survey to aggregate.
+   * @returns Total vote count.
+   */
   private countTotalVotes(survey: Survey): number {
-    if (!survey?.questions) return 0;
-    return survey.questions.reduce((sum: number, q: any) => {
-      const qVotes = (q.options ?? []).reduce((s: number, o: any) => s + (o.votes ?? 0), 0);
-      return sum + qVotes;
-    }, 0);
+    return (survey.questions ?? []).reduce(
+      (sum: number, q: Survey['questions'][number]) =>
+        sum +
+        (q.options ?? []).reduce(
+          (s: number, o: Survey['questions'][number]['options'][number]) => s + (o.votes ?? 0),
+          0,
+        ),
+      0,
+    );
   }
 
-  getFilteredSurveys(surveys: Survey[]): Survey[] {
-    return this.currentFilter === 'past' ? getPastSurveys(surveys) : getActiveSurveys(surveys);
+  /**
+   * Switches the active dashboard filter tab.
+   *
+   * @param filter - New filter value.
+   */
+  setFilter(filter: SurveyFilter): void {
+    this.currentFilter = filter;
   }
 
-  setFilter(f: SurveyFilter): void {
-    this.currentFilter = f;
-  }
-
+  /**
+   * Opens the detail view for the given survey.
+   * Expired surveys are ignored. The cached local version is preferred to
+   * preserve optimistic vote updates.
+   *
+   * @param survey - Survey to open.
+   */
   selectSurvey(survey: Survey): void {
-    if (isSurveyExpired(survey)) return;
-    const cached = this._localSurveys.getValue().find((s: Survey) => s.id === survey.id);
+    const cached = this._localSurveys.getValue().find((s) => s.id === survey.id);
     const source = cached ?? survey;
     this.isCreating = false;
-    this.selectedSurvey = JSON.parse(JSON.stringify(source));
-    // 💡 RADIKALER FIX 2: Auch in der Detailansicht das Feld absichern
+    this.selectedSurvey = JSON.parse(JSON.stringify(source)) as Survey;
+
     if (this.selectedSurvey) {
-      this.selectedSurvey.end_date =
-        this.selectedSurvey.end_date || (this.selectedSurvey as any).endDate || null;
+      const fallbackEndDate = (
+        this.selectedSurvey as unknown as {
+          endDate?: string;
+        }
+      ).endDate;
+
+      this.selectedSurvey.end_date = this.selectedSurvey.end_date ?? fallbackEndDate ?? undefined;
     }
   }
 
+  /** Closes the detail view and returns to the dashboard. */
   goBack(): void {
     this.selectedSurvey = null;
   }
 
-  toggleCategoryDropdown(): void {
-    this.categoryDropdownOpen = !this.categoryDropdownOpen;
-  }
-
-  selectCategory(cat: string): void {
-    this.newSurvey.category = cat;
-    this.categoryDropdownOpen = false;
-  }
-
+  /** Opens the survey creation modal with a fresh empty draft. */
   openCreateMode(): void {
     this.newSurvey = createEmptySurveyDraft();
     this.isCreating = true;
@@ -171,59 +203,48 @@ export class AppComponent implements OnInit {
     this.publishError = '';
   }
 
+  /** Closes the creation modal and resets publish state. */
   cancelCreation(): void {
     this.isCreating = false;
     this.publishStatus = 'idle';
   }
 
-  addAnswerOption(qi: number): void {
-    this.newSurvey.questions[qi].options.push({ label: '', votes: 0 });
-  }
-
-  removeAnswerOption(qi: number, oi: number): void {
-    if (this.newSurvey.questions[qi].options.length > 2) {
-      this.newSurvey.questions[qi].options.splice(oi, 1);
-    }
-  }
-
-  addNextQuestion(): void {
-    this.newSurvey.questions.push(createEmptyQuestion());
-  }
-
-  removeQuestion(qi: number): void {
-    this.newSurvey.questions.splice(qi, 1);
-  }
-
+  /**
+   * Validates the current draft and initiates persistence when valid.
+   * Sets error state on the creation form when validation fails.
+   */
   publishSurvey(): void {
     const error = validateSurveyDraft(this.newSurvey);
     if (error) {
       this.publishError = error;
       this.publishStatus = 'error';
+      this.showErrorToast = true;
       return;
     }
     this.persistSurvey();
   }
 
+  /**
+   * Builds the Supabase payload, optimistically adds a local preview,
+   * and dispatches the insert. On success the local preview is removed.
+   */
   private persistSurvey(): void {
     const payload = buildSurveyPayload(this.newSurvey);
-    // `end_date` wird bereits in `buildSurveyPayload` in ISO konvertiert.
-    // Fügt eine lokale Vorschau hinzu, damit die UI sofort die verbleibenden Tage anzeigt.
-    const localId = this.saveLocally(payload);
+    const localId = this.addLocalPreview(payload);
 
     this.resetAfterPublish();
+
     this.supabaseService
-      .addSurvey(payload)
+      .addSurvey(payload as unknown as Record<string, unknown>)
       .then((r) => {
-        // Wenn das Insert erfolgreich war, entferne die temporäre lokale Kopie.
-        if (!r?.error) {
-          this.removeLocalSurvey(localId);
-        }
+        if (!r?.error) this.removeLocalSurvey(localId);
       })
       .catch(() => {
-        // Network error: leave the local preview in place so user can retry.
+        /* Network error: keep the local preview so the user can retry. */
       });
   }
 
+  /** Resets creation state and triggers the success toast for 3 seconds. */
   private resetAfterPublish(): void {
     this.isCreating = false;
     this.selectedSurvey = null;
@@ -233,43 +254,68 @@ export class AppComponent implements OnInit {
     setTimeout(() => (this.showToast = false), 3000);
   }
 
-  private saveLocally(payload: any): string {
-    // Ensure `end_date` stored locally is an ISO string when possible so
-    // the UI calculates remaining days correctly.
-    let endVal = payload.end_date || payload.endDate || null;
+  /**
+   * Inserts a temporary local-only survey into the reactive stream so the
+   * dashboard reflects the new record instantly before Supabase confirms.
+   *
+   * @param payload - Built survey payload.
+   * @returns The generated local ID string.
+   */
+  private addLocalPreview(payload: ReturnType<typeof buildSurveyPayload>): string {
+    let endVal: string | null = payload.end_date ?? null;
     if (typeof endVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endVal)) {
-      const [y, m, d] = endVal.split('-').map((v: string) => parseInt(v, 10));
+      const [y, m, d] = endVal.split('-').map((v) => parseInt(v, 10));
       endVal = new Date(y, m - 1, d).toISOString();
     }
 
     const local: Survey = {
-      ...payload,
-      id: 'local-' + Date.now(),
-      end_date: endVal,
+      ...(payload as unknown as Survey),
+      id: `local-${Date.now()}`,
+      end_date: endVal ?? undefined,
       created_at: new Date().toISOString(),
     };
+
     this._localSurveys.next([local, ...this._localSurveys.getValue()]);
     return local.id as string;
   }
 
+  /**
+   * Removes a local-only survey from the reactive stream by ID.
+   *
+   * @param localId - The `"local-..."` ID string to remove.
+   */
   private removeLocalSurvey(localId: string): void {
-    const updated = this._localSurveys.getValue().filter((s: Survey) => s.id !== localId);
+    const updated = this._localSurveys.getValue().filter((s) => s.id !== localId);
     this._localSurveys.next(updated);
   }
 
-  registerVote(qi: number, oi: number, event: Event): void {
-    const q = this.selectedSurvey!.questions[qi];
+  /**
+   * Handles a vote interaction emitted by {@link SurveyDetailComponent}.
+   * Dispatches to single- or multi-choice handlers based on the question type.
+   *
+   * @param questionIndex - Zero-based question index.
+   * @param optionIndex   - Zero-based option index.
+   * @param event         - The DOM change event from the input element.
+   */
+  registerVote(questionIndex: number, optionIndex: number, event: Event): void {
+    const q = this.selectedSurvey!.questions[questionIndex];
     const checked = (event.target as HTMLInputElement).checked;
+
     const changed = q.allow_multiple
-      ? (this.applyMultipleChoiceVote(q, qi, oi, checked), true)
-      : this.applySingleChoiceVote(q, qi, oi);
+      ? (this.applyMultipleChoiceVote(q, questionIndex, optionIndex, checked), true)
+      : this.applySingleChoiceVote(q, questionIndex, optionIndex);
 
     if (!changed) return;
+
     this.updateLocalSurveyCache();
     this.persistVoteToSupabase();
-    localStorage.setItem('poll_app_user_votes', JSON.stringify(this.selectedOptions));
+    localStorage.setItem(VOTES_STORAGE_KEY, JSON.stringify(this.selectedOptions));
   }
 
+  /**
+   * Persists the current question state to Supabase.
+   * Skipped for local-only surveys (those with a `"local-"` prefixed ID).
+   */
   private persistVoteToSupabase(): void {
     if (String(this.selectedSurvey!.id).startsWith('local-')) return;
     this.supabaseService.submitVote(
@@ -278,47 +324,75 @@ export class AppComponent implements OnInit {
     );
   }
 
-  private applyMultipleChoiceVote(q: any, qi: number, oi: number, checked: boolean): void {
+  /**
+   * Applies a multi-choice vote change to the selected survey's question state.
+   *
+   * @param q             - The question being voted on.
+   * @param questionIndex - Zero-based question index.
+   * @param optionIndex   - Zero-based option index.
+   * @param checked       - Whether the checkbox was just checked or unchecked.
+   */
+  private applyMultipleChoiceVote(
+    q: Survey['questions'][number],
+    questionIndex: number,
+    optionIndex: number,
+    checked: boolean,
+  ): void {
     const sId = this.selectedSurvey!.id;
-    if (!this.selectedOptions[sId]) {
-      this.selectedOptions[sId] = {};
-    }
-    if (!this.selectedOptions[sId][qi] || typeof this.selectedOptions[sId][qi] !== 'object') {
-      this.selectedOptions[sId][qi] = {};
+    this.selectedOptions[sId] ??= {};
+
+    if (typeof this.selectedOptions[sId][questionIndex] !== 'object') {
+      this.selectedOptions[sId][questionIndex] = {};
     }
 
-    const questionState = this.selectedOptions[sId][qi] as { [oi: number]: boolean };
+    const state = this.selectedOptions[sId][questionIndex] as Record<number, boolean>;
 
     if (checked) {
-      q.options[oi].votes = (q.options[oi].votes || 0) + 1;
-      questionState[oi] = true;
+      q.options[optionIndex].votes = (q.options[optionIndex].votes ?? 0) + 1;
+      state[optionIndex] = true;
     } else {
-      q.options[oi].votes = Math.max(0, (q.options[oi].votes || 1) - 1);
-      questionState[oi] = false;
+      q.options[optionIndex].votes = Math.max(0, (q.options[optionIndex].votes ?? 1) - 1);
+      state[optionIndex] = false;
     }
   }
 
-  private applySingleChoiceVote(q: any, qi: number, oi: number): boolean {
+  /**
+   * Applies a single-choice vote to the selected survey's question state.
+   * Decrements the previously selected option if one exists.
+   *
+   * @param q             - The question being voted on.
+   * @param questionIndex - Zero-based question index.
+   * @param optionIndex   - Zero-based option index.
+   * @returns `true` when the selection changed; `false` when it was unchanged.
+   */
+  private applySingleChoiceVote(
+    q: Survey['questions'][number],
+    questionIndex: number,
+    optionIndex: number,
+  ): boolean {
     const sId = this.selectedSurvey!.id;
-    if (!this.selectedOptions[sId]) {
-      this.selectedOptions[sId] = {};
+    this.selectedOptions[sId] ??= {};
+
+    const prev = this.selectedOptions[sId][questionIndex];
+    if (prev === optionIndex) return false;
+
+    if (typeof prev === 'number' && q.options[prev]) {
+      q.options[prev].votes = Math.max(0, (q.options[prev].votes ?? 1) - 1);
     }
 
-    const prev = this.selectedOptions[sId][qi];
-    if (prev === oi) return false;
-
-    if (prev !== undefined && typeof prev === 'number' && q.options[prev]) {
-      q.options[prev].votes = Math.max(0, (q.options[prev].votes || 1) - 1);
-    }
-    q.options[oi].votes = (q.options[oi].votes || 0) + 1;
-    this.selectedOptions[sId][qi] = oi;
+    q.options[optionIndex].votes = (q.options[optionIndex].votes ?? 0) + 1;
+    this.selectedOptions[sId][questionIndex] = optionIndex;
     return true;
   }
 
+  /**
+   * Replaces the cached copy of the current survey in the local stream
+   * with the latest in-memory version (including updated vote counts).
+   */
   private updateLocalSurveyCache(): void {
     const updated = this._localSurveys
       .getValue()
-      .map((s: Survey) => (s.id === this.selectedSurvey!.id ? { ...this.selectedSurvey! } : s));
+      .map((s) => (s.id === this.selectedSurvey!.id ? { ...this.selectedSurvey! } : s));
     this._localSurveys.next(updated);
   }
 }

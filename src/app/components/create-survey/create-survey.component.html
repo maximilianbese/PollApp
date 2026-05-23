@@ -1,0 +1,146 @@
+<div class="create-survey-wrapper" (click)="cancelled.emit()">
+  <div class="create-survey-card" (click)="$event.stopPropagation()">
+    <div class="card-top-row">
+      <div>
+        <span class="badge-draft">Draft</span>
+        <h2>Create new survey</h2>
+      </div>
+      <button class="btn-cancel" (click)="cancelled.emit()">Cancel <span>✕</span></button>
+    </div>
+
+    <div class="form-split-layout">
+      <div class="form-column">
+        <div class="form-group">
+          <label>Survey name <span class="required-star">*</span></label>
+          <input
+            type="text"
+            [(ngModel)]="draft.title"
+            placeholder="e.g. Let's Plan the Next Team Event Together"
+            [class.input-error]="publishStatus === 'error' && !draft.title.trim()"
+          />
+          <button class="icon-delete" (click)="draft.title = ''">
+            <img src="/add_circle.svg" alt="Clear" style="transform: rotate(45deg)" />
+          </button>
+        </div>
+
+        <div class="form-group">
+          <div class="row-inputs">
+            <div class="sub-group">
+              <label>Set end date <span class="optional-text">(optional)</span></label>
+              <input type="date" name="endDate" [(ngModel)]="draft.endDate" [min]="todayString" />
+              <div class="end-date-hint" *ngIf="draft.endDate">
+                <small>{{ endDateHint() }}</small>
+              </div>
+            </div>
+            <button class="icon-delete" (click)="draft.endDate = ''">
+              <img src="/add_circle.svg" alt="Clear" style="transform: rotate(45deg)" />
+            </button>
+            <div class="category-select-wrapper">
+              <button class="category-trigger" (click)="toggleCategoryDropdown()">
+                {{ draft.category || 'Choose category' }}
+                <span>{{ categoryDropdownOpen ? '▲' : '▼' }}</span>
+              </button>
+              <div class="category-dropdown" *ngIf="categoryDropdownOpen">
+                <button
+                  class="category-option"
+                  *ngFor="let cat of categories"
+                  [class.selected]="draft.category === cat"
+                  (click)="selectCategory(cat)"
+                >
+                  {{ cat }}
+                </button>
+              </div>
+            </div>
+            <button class="icon-delete" (click)="draft.category = ''">
+              <img src="/add_circle.svg" alt="Clear" style="transform: rotate(45deg)" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="question-builder-section"
+          *ngFor="let question of draft.questions; let qIdx = index"
+        >
+          <div class="question-title-row">
+            <h3>{{ qIdx + 1 }}. Question <span class="required-star">*</span></h3>
+            <button
+              class="icon-delete"
+              *ngIf="draft.questions.length > 1"
+              (click)="removeQuestion(qIdx)"
+            >
+              <img src="/add_circle.svg" alt="Remove" style="transform: rotate(45deg)" />
+            </button>
+          </div>
+
+          <div class="form-group">
+            <input
+              type="text"
+              [(ngModel)]="question.questionText"
+              placeholder="Enter your question here..."
+              [class.input-error]="publishStatus === 'error' && !question.questionText.trim()"
+            />
+          </div>
+
+          <div class="answers-heading-row">
+            <h4>Answers <span class="required-star">*</span></h4>
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="question.allowMultiple" />
+              Allow multiple answers.
+            </label>
+          </div>
+
+          <div class="answer-input-row" *ngFor="let option of question.options; let oIdx = index">
+            <span class="prefix">{{ getLetterPrefix(oIdx) }}</span>
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="option.label"
+                placeholder="Option text..."
+                [class.input-error]="publishStatus === 'error' && !option.label.trim()"
+              />
+              <button
+                class="icon-delete"
+                (click)="removeAnswerOption(qIdx, oIdx)"
+                [style.opacity]="question.options.length <= 2 ? '0.3' : '1'"
+                [style.cursor]="question.options.length <= 2 ? 'not-allowed' : 'pointer'"
+              >
+                <img src="/add_circle.svg" alt="Remove" style="transform: rotate(45deg)" />
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-text-action" (click)="addAnswerOption(qIdx)">
+            <span>+</span> Add answer
+          </button>
+        </div>
+
+        <p class="required-legend"><span class="required-star">*</span> Required fields</p>
+      </div>
+
+      <div class="form-column">
+        <div class="form-group">
+          <label>Describing text <span class="optional-text">(optional)</span></label>
+          <textarea
+            [(ngModel)]="draft.description"
+            placeholder="Optional descriptions go here..."
+          ></textarea>
+          <button
+            class="icon-delete"
+            (click)="draft.description = ''"
+            style="bottom: auto; top: 45px"
+          >
+            <img src="/add_circle.svg" alt="Clear" style="transform: rotate(45deg)" />
+          </button>
+        </div>
+
+        <button class="btn-secondary-action" (click)="addQuestion()">
+          Add next question <span>+</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-footer-actions">
+      <button class="btn-publish" (click)="published.emit()">Publish</button>
+    </div>
+  </div>
+</div>
